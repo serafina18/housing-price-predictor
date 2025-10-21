@@ -1,0 +1,541 @@
+---
+title: "EDA"
+author: Anne Do - SID 541023382
+format: 
+  html:
+    embed-resources: true
+    toc: true
+    code-fold: true
+---
+
+```{r}
+#| message: false
+#| warning: false
+library(tidyverse)
+library(plotly)
+library(gridExtra)
+theme_set(theme_bw())
+```
+
+### Loading the dataset
+
+```{r}
+df = read.delim("housing-prices-ge19.txt")
+```
+
+### Looking at the pattern of missing data
+
+```{r}
+visdat::vis_miss(df) + coord_flip() + theme(legend.position = "none")
+```
+
+=\> No data is missing
+
+### Data dictionary
+
+I am using the data dictionary of the [SaratogaHouses: Houses in Saratoga County (2006) dataset](https://rdrr.io/cran/mosaicData/man/SaratogaHouses.html) (Pruim et al., 2023) to interpret the meanings and units of variables in this dataset, following the instruction from [this comment](https://edstem.org/au/courses/25836/discussion/2948658?answer=6509453) on Ed Discussion (Lauer, 2025).
+
+### Distribution of dependent variable (house price)
+
+```{r, message=FALSE}
+Q1_Price <- quantile(df$Price, 0.25)
+Q3_Price <- quantile(df$Price, 0.75)
+IQR_Price <- Q3_Price - Q1_Price
+lower_bound_Price <- Q1_Price - 1.5 * IQR_Price
+upper_bound_Price <- Q3_Price + 1.5 * IQR_Price
+
+ggplot(df, aes(x=Price)) + 
+  geom_boxplot() +
+  labs(x = "House Price (USD)") +
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE))
+
+ggplot(df, aes(x=Price)) +
+  geom_histogram() +
+  labs(x = "House Price (USD)",
+       y = "Frequency") +
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE))  +
+  geom_vline(xintercept = lower_bound_Price, color = "red", linetype = "dashed", linewidth = 1) +
+    annotate("text", x = lower_bound_Price + 75000, y = 250, label = paste0("Lower bound"))  +
+  geom_vline(xintercept = upper_bound_Price, color = "red", linetype = "dashed", linewidth = 1) +
+    annotate("text", x = upper_bound_Price + 75000, y = 250, label = paste0("Upper bound")) 
+# ggplot(df, aes(x=Price,
+#           y = after_stat(density))) + 
+#       geom_histogram() + 
+#       labs(x = "House Price", 
+#            y = "Probability") +
+#   scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) +
+#   scale_y_continuous(labels = function(x) format(x, scientific = FALSE))  +
+#   geom_vline(xintercept = lower_bound_Price, color = "red", linetype = "dashed", linewidth = 1)  +
+#   geom_vline(xintercept = upper_bound_Price, color = "red", linetype = "dashed", linewidth = 1)
+
+      # theme(axis.title.x = element_text(face = "bold", size = 14,
+      #                                   margin = margin(t = 15)),
+      #       axis.title.y = element_text(face = "bold", size = 14,
+      #                                   margin = margin(r = 15)),
+      #       axis.text = element_text(face = "bold", size = 12)))
+```
+
+=\> Right-skewed distribution
+
+### Reclassification to factor variables
+
+```{r}
+categorical_vars = c("Fuel.Type", "Heat.Type", "Sewer.Type")
+df <- df %>%
+  mutate(across(all_of(unname(categorical_vars)), as.factor))
+
+# Boolean variables
+boolean_vars = c("Waterfront", "New.Construct", "Central.Air")
+df <- df %>%
+  mutate(across(all_of(unname(boolean_vars)), as.factor))
+```
+
+### Dependent variable against potential predictors
+
+Included in EDA submission
+
+#### [Price vs Living Area/ Bedroom]{.underline}
+
+```{r} p1 <- ggplot(df, aes(x=Living.Area, y = Price)) +        geom_point() +        labs(x = "Living.Area (square feet)",             y = "Price (USD)") +   scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) +   scale_y_continuous(labels = function(x) format(x, scientific = FALSE))  df$Bedroom.Living.Area = df$Living.Area / df$Bedrooms p2 <- ggplot(df, aes(x = Bedroom.Living.Area, y = Price)) +   geom_point() +   labs(x = "Living.Area.Per.Bedroom (square feet)",             y = "Price (USD)") +   scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) +   scale_y_continuous(labels = function(x) format(x, scientific = FALSE))  grid.arrange(p1, p2, ncol=2)}
+```
+
+The lot size seems to be pretty left-skewed?
+
+#### [Price vs Central.Air (Faceted by Waterfront)]{.underline}
+
+```{r}
+ggplot(df) + aes(y = New.Construct, x = Price) + 
+  geom_boxplot() +   
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) + 
+  facet_grid( Waterfront ~ .)
+```
+
+### Dependent variable against other independent variables
+
+#### [Price vs Age]{.underline}
+
+```{r}
+ggplot(df, aes(x = Age, y = Price)) +
+  geom_point() +
+  scale_y_continuous(labels = function(x) format(x, scientific = FALSE))
+```
+
+=\> Not normal or linear =\> Might need to put into graph/table with another categorical factor to see what happens
+
+#### [Price vs Lot.Size]{.underline}
+
+Remove outliers from Lot.Size
+
+```{r}
+ggplotly(ggplot(df, aes(y=Lot.Size)) + 
+  geom_boxplot() +
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE)))
+
+Q1_LotSize <- quantile(df$Lot.Size, 0.25)
+Q3_LotSize <- quantile(df$Lot.Size, 0.75)
+IQR_LotSize <- Q3_LotSize - Q1_LotSize
+lower_bound_LotSize <- Q1_LotSize - 1.5 * IQR_LotSize
+upper_bound_LotSize <- Q3_LotSize + 1.5 * IQR_LotSize
+
+cleaned_df_LotSize <- df %>%
+  filter(Lot.Size >= lower_bound_LotSize & Lot.Size <= upper_bound_LotSize)
+
+ggplot(cleaned_df_LotSize, aes(y=Lot.Size)) + 
+  geom_boxplot() +
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE))
+```
+
+Visualise Price vs Lot.Size
+
+```{r}
+ggplot(df, aes(x=Lot.Size, y = Price)) + 
+      geom_point() + 
+      labs(x = "Size of lot (acres)", 
+           y = "Price") +
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) +
+  scale_y_continuous(labels = function(x) format(x, scientific = FALSE))  +
+  geom_vline(xintercept = upper_bound_LotSize, color = "red", linetype = "dashed", linewidth = 1)
+
+ggplot(cleaned_df_LotSize, aes(x=Lot.Size, y = Price)) + 
+      geom_point() + 
+      labs(title = "Scatterplot without outliers",
+           x = "Size of lot (acres)", 
+           y = "Price") +
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) +
+  scale_y_continuous(labels = function(x) format(x, scientific = FALSE))
+```
+
+With outlier: pretty hard to see any pattern. Without outlier: looks pretty random.
+
+#### [Price vs Land.Value]{.underline}
+
+Distribution of Land.Value
+
+```{r}
+ggplot(df, aes(x = Land.Value)) + 
+  geom_boxplot() +
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE))
+
+Q1_LandVal <- quantile(df$Land.Value, 0.25)
+Q3_LandVal <- quantile(df$Land.Value, 0.75)
+IQR_LandVal <- Q3_LandVal - Q1_LandVal
+lower_bound_LandVal <- Q1_LandVal - 1.5 * IQR_LandVal
+upper_bound_LandVal <- Q3_LandVal + 1.5 * IQR_LandVal
+```
+
+Scatterplot of Price against Land.Value
+
+```{r}
+ggplot(df, aes(x=Land.Value, y = Price)) + 
+      geom_point() + 
+      labs(x = "Value of land (USD)", 
+           y = "Price") +
+  geom_vline(xintercept = upper_bound_LandVal, color = "red", linetype = "dashed", linewidth = 1) +
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) +
+  scale_y_continuous(labels = function(x) format(x, scientific = FALSE))
+
+df %>%
+  filter(Land.Value >= lower_bound_LandVal & Land.Value <= upper_bound_LandVal) %>%
+  ggplot(aes(x=Land.Value, y = Price)) + 
+  geom_point() +
+  labs(title = "Scatterplot without outliers",
+       x = "Value of land (USD)",
+       y = "Price") +
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) +
+  scale_y_continuous(labels = function(x) format(x, scientific = FALSE))
+```
+
+May fit linear model
+
+#### [Price vs Living.Area]{.underline}
+
+```{r}
+ggplot(df, aes(x=Living.Area, y = Price)) + 
+      geom_point() + 
+      labs(x = "Living.Area (square feet)", 
+           y = "Price (USD)") +
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) +
+  scale_y_continuous(labels = function(x) format(x, scientific = FALSE))
+```
+
+#### [Price vs Pct.College]{.underline}
+
+```{r}
+ggplot(df, aes(x=Pct.College, y = Price)) + 
+      geom_point() + 
+      labs(x = "Percent of neighborhood that graduated college", 
+           y = "Price (USD)") +
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) +
+  scale_y_continuous(labels = function(x) format(x, scientific = FALSE))
+```
+
+Maybe easier to visualise if we group percentages into groups
+
+#### [Price vs Bedrooms]{.underline}
+
+```{r}
+ggplot(df, aes(x = Price, y = Bedrooms, group=Bedrooms)) +
+  geom_boxplot() +
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE))
+```
+
+Does impact/ Does have a relation =\> Needs testing/ investigation
+
+Mean of house price of house with:
+
+-   1 bedroom: `r mean(df$Price[df$Bedrooms == 1])`
+
+-   2 bedrooms: `r mean(df$Price[df$Bedrooms == 2])` -\> Decrease
+
+-   3 bedrooms: `r mean(df$Price[df$Bedrooms == 3])` -\> Increase, close to that of 1 bedroom
+
+Quite similar:
+
+-   4 bedrooms: `r mean(df$Price[df$Bedrooms == 4])`
+
+-   5 bedrooms: `r mean(df$Price[df$Bedrooms == 5])`
+
+-   6 bedrooms: `r mean(df$Price[df$Bedrooms == 6])`
+
+Decrease:
+
+-   7 bedrooms: `r mean(df$Price[df$Bedrooms == 7])`
+
+#### [Price vs Fireplaces]{.underline}
+
+```{r}
+ggplot(df, aes(x = Price, y = Fireplaces, group=Fireplaces)) +
+  geom_boxplot() +
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE))
+```
+
+Seems to have an impact: Mean increasing
+
+```{r}
+# Increases all the way
+mean(df$Price[df$Fireplaces == 0])
+mean(df$Price[df$Fireplaces == 1])
+mean(df$Price[df$Fireplaces == 2])
+mean(df$Price[df$Fireplaces == 3])
+mean(df$Price[df$Fireplaces == 4])
+```
+
+#### [Price vs Bathrooms]{.underline}
+
+```{r}
+table(df$Bathrooms)
+
+ggplot(df, aes(x = Price, y = Bathrooms, group=Bathrooms)) +
+  geom_boxplot() +
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE))
+```
+
+0 and 4.5 pretty hard but for others: increase
+
+```{r}
+print("0 bathroom")
+mean(df$Price[df$Bathrooms == 0])
+print("1 bathroom")
+mean(df$Price[df$Bathrooms == 1])
+print("1.5 bathrooms")
+mean(df$Price[df$Bathrooms == 1.5])
+print("2 bathrooms")
+mean(df$Price[df$Bathrooms == 2])
+print("2.5 bathrooms")
+mean(df$Price[df$Bathrooms == 2.5])
+print("3 bathrooms")
+mean(df$Price[df$Bathrooms == 3])
+print("3.5 bathrooms")
+mean(df$Price[df$Bathrooms == 3.5])
+print("4 bathrooms")
+mean(df$Price[df$Bathrooms == 4])
+print("4.5 bathrooms")
+mean(df$Price[df$Bathrooms == 4.5])
+```
+
+#### [Price vs Rooms]{.underline}
+
+```{r}
+print("Summary table")
+table(df$Rooms)
+
+ggplot(df, aes(x = Price, y = Rooms, group=Rooms)) +
+  geom_boxplot() +
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE))
+```
+
+Does matter? Have a table with all types of room
+
+```{r}
+# Has tendency to increase
+print("Mean value of each number of rooms (ascending)")
+mean(df$Price[df$Rooms == 2])
+mean(df$Price[df$Rooms == 3])
+mean(df$Price[df$Rooms == 4])
+mean(df$Price[df$Rooms == 5])
+mean(df$Price[df$Rooms == 6])
+mean(df$Price[df$Rooms == 7])
+mean(df$Price[df$Rooms == 8])
+mean(df$Price[df$Rooms == 9])
+mean(df$Price[df$Rooms == 10])
+mean(df$Price[df$Rooms == 11])
+mean(df$Price[df$Rooms == 12])
+```
+
+=\> Has tendency to increase.
+
+#### [Price vs Fuel.Type]{.underline}
+
+```{r}
+print("Summary table")
+table(df$Fuel.Type)
+
+ggplot(df, aes(x = Price, y = Fuel.Type)) +
+  geom_boxplot() +
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE))
+```
+
+=\> Might has some relation?
+
+#### [Price vs Heat.Type]{.underline}
+
+```{r,fig.height=4}
+print("Summary table")
+table(df$Heat.Type)
+
+ggplot(df, aes(x = Price, y = Heat.Type)) +
+  geom_boxplot() +
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE))
+  # facet_grid()
+```
+
+=\> Maybe some relation
+
+#### [Price vs Sewer.Type]{.underline}
+
+```{r}
+ggplot(df, aes(x=Price, y=Sewer.Type, group=Sewer.Type)) +
+  geom_boxplot() +
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE))
+```
+
+Not super significant variation =\> no relation?
+
+```{r}
+print("Public")
+mean(df$Price[df$Sewer.Type == "Public"])
+print("Private")
+mean(df$Price[df$Sewer.Type == "Private"])
+print("None/Unknown")
+mean(df$Price[df$Sewer.Type == "None/Unknown"])
+```
+
+#### [Price vs Waterfront]{.underline}
+
+```{r}
+ggplot(df, aes(x=Price, y=Waterfront, group=Waterfront)) +
+  geom_boxplot() +
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE))
+```
+
+=\> There is relation
+
+```{r}
+t.test(df$Price[df$Waterfront == 0],
+       df$Price[df$Waterfront == 1],
+       var.equal=F)
+```
+
+The distributions don't look quite normal -\> Might have to take permutation test
+
+#### [Price vs New.Construct]{.underline}
+
+```{r}
+ggplot(df, aes(x=Price, y=New.Construct, group=New.Construct)) +
+  geom_boxplot() +
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE))
+```
+
+=\> Yes relation
+
+```{r}
+t.test(df$Price[df$New.Construct == 0],
+       df$Price[df$New.Construct == 1],
+       var.equal=F)
+```
+
+The distributions don't look quite normal -\> Might have to take permutation test
+
+#### [Price vs Central.Air]{.underline}
+
+```{r}
+ggplot(df, aes(x=Price, y=Central.Air, group=Central.Air)) +
+  geom_boxplot() +
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE))
+```
+
+```{r}
+t.test(df$Price[df$Central.Air == 0],
+       df$Price[df$Central.Air == 1],
+       var.equal=F)
+```
+
+The distributions don't look quite normal -\> Might have to take permutation test
+
+#### [Price vs Bathrooms and boolean]{.underline}
+
+```{r}
+ggplot(df) + 
+  aes(y = Waterfront, x = Price) +    
+  geom_boxplot() +   
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) +  
+  facet_grid( Bathrooms ~ .)
+
+ggplot(df) + aes(y = Waterfront, x = Price) + 
+  geom_boxplot() +   
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) + 
+  facet_grid( Rooms ~ .)
+```
+
+3 variables: Bathrooms \~ Heat.Type
+
+```{r fig.height=5}
+ggplot(df) + aes(y = Heat.Type, x = Price) + 
+  geom_boxplot() +   
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) + 
+  facet_grid( Bathrooms ~ .)
+```
+
+3 variables: Bathrooms \~ Sewer.Type
+
+```{r, fig.height=5}
+ggplot(df) + aes(y = Sewer.Type, x = Price) + 
+  geom_boxplot() +   
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) + 
+  facet_grid( Bathrooms ~ .)
+```
+
+=\> Too hard to view
+
+3 variables: Heat.Type \~ Sewer.Type
+
+```{r}
+ggplot(df) + aes(y = Sewer.Type, x = Price) + 
+  geom_boxplot() +   
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) + 
+  facet_grid( Heat.Type ~ .)
+```
+
+=\> I don't know what I can conclude out of that
+
+3 variable: New.Construct, Central.Air
+
+```{r}
+ggplot(df) + aes(y = Central.Air, x = Price) + 
+  geom_boxplot() +   
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) + 
+  facet_grid( New.Construct ~ .)
+
+ggplot(df) + aes(y = New.Construct, x = Price) + 
+  geom_boxplot() +   
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) + 
+  facet_grid( Central.Air ~ .)
+```
+
+Median between yes and no Central.Air pretty similar when newly constructed
+
+```{r}
+mean(df$Price[df$New.Construct == 0 & df$Central.Air == 0])
+mean(df$Price[df$New.Construct == 1 & df$Central.Air == 0])
+mean(df$Price[df$New.Construct == 0 & df$Central.Air == 1])
+mean(df$Price[df$New.Construct == 1 & df$Central.Air == 1])
+
+# 0 0 => 
+```
+
+3 variable: New.Construct, Waterfront
+
+```{r}
+ggplot(df) + aes(y = Waterfront, x = Price) + 
+  geom_boxplot() +   
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) + 
+  facet_grid( New.Construct ~ .) +
+  labs(title = "Faceted by New.Construct")
+
+ggplot(df) + aes(y = New.Construct, x = Price) + 
+  geom_boxplot() +   
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) + 
+  facet_grid( Waterfront ~ .) +
+  labs(title = "Faceted by Waterfront")
+```
+
+[Price vs Living Area/Room]{.underline}
+
+```{r}
+df$Indiv.Living.Area = df$Living.Area / df$Rooms
+ggplot(df, aes(x = Indiv.Living.Area, y = Price)) +
+  geom_point() +
+  labs(title = "Living Area Per Room") +
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) +
+  scale_y_continuous(labels = function(x) format(x, scientific = FALSE))
+```
