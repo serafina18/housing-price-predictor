@@ -1,0 +1,14 @@
+---
+title: "Presentation"
+format:
+  revealjs:
+    auto-slide: 20000
+    embed-resources: true
+    theme: "solarized"
+    code-overflow: "wrap"
+code-tools: true
+---
+
+```{r}
+df = read.delim("housing-prices-ge19.txt")
+```
