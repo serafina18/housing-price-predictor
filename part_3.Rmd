@@ -1,0 +1,207 @@
+---
+title: "Individual_EDA"
+output: html_document
+date: "2025-10-05"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+data <- read.delim("housing-prices-ge19.txt", header = TRUE, sep = "\t", quote = "", comment.char = "", check.names = TRUE)
+```
+
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(scales)
+
+
+#Checking the summary, and missing val of the data
+summary(data)
+colSums(is.na(data)) #No missing values are found in the data.
+
+#Converting variables into the correct structire
+data <- data %>%
+  mutate(
+    Waterfront = as.factor(Waterfront),
+    New.Construct = as.factor(New.Construct),
+    Central.Air = as.factor(Central.Air),
+    Fuel.Type = as.factor(Fuel.Type),
+    Heat.Type = as.factor(Heat.Type),
+    Sewer.Type = as.factor(Sewer.Type)
+  )
+
+```
+
+
+
+```{r}
+library(dplyr)
+
+data_cleaned <- data %>%
+  #Remove houses with invalid lot size
+  filter(Lot.Size > 0) %>%
+  #Remove old houses that has an age 0
+  filter(!(Age == 0 & New.Construct == 0))
+
+#1st problem statement:With the current housing crisis in new york state, we want to see what factors can increase housing price for a smaller lot size
+
+summary(data_cleaned$Lot.Size)
+hist(data_cleaned$Lot.Size, breaks = 30)
+quantile(data_cleaned$Lot.Size, probs = c(0.25, 0.4, 0.5, 0.75))
+#Result: The data is heavily right skewed, we define smaller lot size is anything below the 40 percentile
+
+#Filter out houses with a waterfront, and erase bigger lot sizes >40%
+q <- quantile(data_cleaned$Lot.Size, 0.4)
+small_lot <- data_cleaned %>%
+  filter(Lot.Size < q)
+```
+
+
+
+
+```{r}
+#Model Selection
+M0_A <- lm(Price ~ 1, data = small_lot)
+M1_A <- lm(Price ~ ., data = small_lot)
+
+step_fwd_A  <- step(M0_A, scope = list(lower = M0_A, upper = M1_A), direction = "forward", trace = FALSE)
+summary(step_fwd_A)
+#Result:living area, land value, bathrooms, waterfront
+
+step_back_A <- step(M1_A, direction = "backward", trace = FALSE)
+summary(step_back_A)
+#Result: waterfront, land value, new construction, living area, bathrooms
+
+step_both_A <- step(M0_A, scope = list(lower = M0_A, upper = M1_A), direction = "both", trace = FALSE)
+summary(step_both_A)
+#Result: living area, land value, bathrooms, waterfront
+```
+
+```{r}
+#3rd problem statement: How much do the unchangeable factors impact housing price vs changeable?
+# --- Define groups ---
+unchangeable_vars <- c("Lot.Size", "Waterfront", "Age", "Land.Value")
+changeable_vars   <- c("Living.Area", "Bathrooms", "Bedrooms", "Rooms",
+                       "Central.Air", "New.Construct", "Heat.Type",
+                       "Fuel.Type", "Fireplaces")
+
+data_U <- data_cleaned[, c("Price", unchangeable_vars)]
+data_C <- data_cleaned[, c("Price", changeable_vars)]
+
+#--- UNCHANGEABLE VARIABLES ---
+m0_U <- lm(Price ~ 1, data = data_U)
+m1_U <- lm(Price ~ ., data = data_U)
+
+#forward selection
+step_fwd_U <- step(m0_U, scope = list(lower = m0_U, upper = m1_U),
+                   direction = "forward", trace = FALSE)
+summary(step_fwd_U)
+
+#backward selection
+step_back_U <- step(m1_U, direction = "backward", trace = FALSE)
+summary(step_back_U)
+
+#stepwise
+step_both_U <- step(m0_U, scope = list(lower = m0_U, upper = m1_U),
+                    direction = "both", trace = FALSE)
+summary(step_both_U)
+#MOST INFLUENTIAL VARIABLES: land value, age, lot size, waterfront
+
+# --- CHANGEABLE VARIABLES ---
+m0_C <- lm(Price ~ 1, data = data_C)
+m1_C <- lm(Price ~ ., data = data_C)
+
+# Forward selection
+step_fwd_C <- step(m0_C, scope = list(lower = m0_C, upper = m1_C),
+                   direction = "forward", trace = FALSE)
+summary(step_fwd_C)
+
+# Backward selection
+step_back_C <- step(m1_C, direction = "backward", trace = FALSE)
+summary(step_back_C)
+
+# Stepwise (both)
+step_both_C <- step(m0_C, scope = list(lower = m0_C, upper = m1_C),
+                    direction = "both", trace = FALSE)
+summary(step_both_C)
+#MOST INFLUENTIAL VARIABLES: living area, central air, bathrooms, bedrooms
+
+
+comparison <- data.frame(
+  Model = c("Unchangeable_Forward", "Unchangeable_Backward", "Unchangeable_Both",
+            "Changeable_Forward", "Changeable_Backward", "Changeable_Both"),
+  R2 = c(summary(step_fwd_U)$r.squared,
+         summary(step_back_U)$r.squared,
+         summary(step_both_U)$r.squared,
+         summary(step_fwd_C)$r.squared,
+         summary(step_back_C)$r.squared,
+         summary(step_both_C)$r.squared),
+  Adj_R2 = c(summary(step_fwd_U)$adj.r.squared,
+             summary(step_back_U)$adj.r.squared,
+             summary(step_both_U)$adj.r.squared,
+             summary(step_fwd_C)$adj.r.squared,
+             summary(step_back_C)$adj.r.squared,
+             summary(step_both_C)$adj.r.squared)
+)
+
+comparison
+#Result: all selection methods use (forward, back, both) produced the same results within unchangable and changeable variables. 
+#About 38% of the variation of house prices is explained by factors that are unchangeable (R2 = 0.38)
+#About 55% of the varation of house prices is exaplained by factors that are changeable (R2 = 0.55)
+
+```
+```{r}
+
+
+
+
+
+```
+```{r}
+#mostly learnt from wk10_live
+set.seed(5)
+n = nrow(data_cleaned)
+n
+
+n_train = floor(0.8*n)
+n_test = n - n_train
+grp_labs = rep(c("Train","Test"), times = c(n_train, n_test)) 
+data_cleaned$grp = sample(grp_labs)
+train_dat = data_cleaned |> filter(grp == "Train")
+
+Living.Area_train = lm(Price ~ Living.Area, data = train_dat)
+Living.Area_pred = predict(Living.Area_train, newdata = test_dat)
+Living.Area_mse = mean((test_dat$Price - Living.Area_pred)^2)
+sqrt(Living.Area_mse) #regular root mean square
+Living.Area_mae = mean(abs(test_dat$Price - Living.Area_pred))
+Living.Area_mae #mean absolute error which is less influenced by outliers.
+
+lm_full_train = lm(Price ~ Living.Area + Land.Value + Bathrooms + Waterfront, data = train_dat)
+test_dat = data_cleaned |> filter(grp == "Test")
+full_pred = predict(lm_full_train, newdata = test_dat)
+full_mse = mean((test_dat$Price - full_pred)^2)
+sqrt(full_mse)
+full_mae = mean(abs(test_dat$Price - full_pred))
+full_mae
+
+
+```
+
+```{r}
+
+ggplot(data_cleaned, aes(x = Bathrooms, y = Price)) +
+  geom_point() +
+  labs(title = "Price vs. Living Area",
+       x = "Living Area",
+       y = "Price") +
+  theme_minimal()
+```
+
+```{r}
+summary(Living.Area_train)
+```
+
