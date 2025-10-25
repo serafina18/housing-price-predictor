@@ -154,13 +154,8 @@ comparison
 #About 55% of the varation of house prices is exaplained by factors that are changeable (R2 = 0.55)
 
 ```
-```{r}
 
 
-
-
-
-```
 ```{r}
 #mostly learnt from wk10_live
 set.seed(5)
@@ -175,10 +170,32 @@ train_dat = data_cleaned |> filter(grp == "Train")
 
 Living.Area_train = lm(Price ~ Living.Area, data = train_dat)
 Living.Area_pred = predict(Living.Area_train, newdata = test_dat)
+summary(Living.Area_train)
 Living.Area_mse = mean((test_dat$Price - Living.Area_pred)^2)
 sqrt(Living.Area_mse) #regular root mean square
 Living.Area_mae = mean(abs(test_dat$Price - Living.Area_pred))
 Living.Area_mae #mean absolute error which is less influenced by outliers.
+Bathrooms_train = lm(Price ~ Bathrooms, data = train_dat)
+Bathrooms_pred = predict(Bathrooms_train, newdata = test_dat)
+summary(Bathrooms_train)
+Bathrooms_mse = mean((test_dat$Price - Bathrooms_pred)^2)
+sqrt(Bathrooms_mse) #regular root mean square
+Bathrooms_mae = mean(abs(test_dat$Price - Bathrooms_pred))
+Bathrooms_mae #mean absolute error which is less influenced by outliers.
+Land.Value_train = lm(Price ~ Land.Value, data = train_dat)
+Land.Value_pred = predict(Land.Value_train, newdata = test_dat)
+summary(Land.Value_train)
+Land.Value_mse = mean((test_dat$Price - Land.Value_pred)^2)
+sqrt(Land.Value_mse) #regular root mean square
+Land.Value_mae = mean(abs(test_dat$Price - Land.Value_pred))
+Land.Value_mae #mean absolute error which is less influenced by outliers.
+Waterfront_train = lm(Price ~ Waterfront, data = train_dat)
+Waterfront_pred = predict(Waterfront_train, newdata = test_dat)
+summary(Waterfront_train)
+Waterfront_mse = mean((test_dat$Price - Waterfront_pred)^2)
+sqrt(Waterfront_mse) #regular root mean square
+Waterfront_mae = mean(abs(test_dat$Price - Waterfront_pred))
+Waterfront_mae #mean absolute error which is less influenced by outliers.
 
 lm_full_train = lm(Price ~ Living.Area + Land.Value + Bathrooms + Waterfront, data = train_dat)
 test_dat = data_cleaned |> filter(grp == "Test")
@@ -191,17 +208,36 @@ full_mae
 
 ```
 
-```{r}
-
-ggplot(data_cleaned, aes(x = Bathrooms, y = Price)) +
-  geom_point() +
-  labs(title = "Price vs. Living Area",
-       x = "Living Area",
-       y = "Price") +
-  theme_minimal()
-```
 
 ```{r}
+# for (item in c(Living.Area_train, Waterfront_train, Land.Value_train, Bathrooms_train)){}
+Living.Area_train
 summary(Living.Area_train)
+AIC(Living.Area_train)
+Bathrooms_train
+summary(Bathrooms_train)
+AIC(Bathrooms_train)
+Land.Value_train
+summary(Land.Value_train)
+AIC(Land.Value_train)
+Waterfront_train
+summary(Waterfront_train)
+AIC(Waterfront_train)
+
+
+lm_full_train
+summary(lm_full_train)
+AIC(lm_full_train)
+```
+```{r}
+logistic_model <- glm(Waterfront ~ Price, data = data_cleaned, family = "binomial")
+
+logistic_model
+summary(logistic_model)
+
+# To get the odds ratios, exponentiate the coefficients
+exp(coef(logistic_model))
+
+
 ```
 
