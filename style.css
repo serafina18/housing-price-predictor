@@ -1,0 +1,183 @@
+
+:root {
+  --r-heading1-size: 1.6em;
+  --r-heading2-size: 1.35em;
+  --r-heading3-size: 1.15em;
+
+  --r-main-font-size: 28px;      
+  --r-block-margin: 18px;      
+}
+
+.reveal {
+  font-variant-numeric: lining-nums;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.reveal p,
+.reveal li {
+  line-height: 1.35;
+}
+
+.reveal ul, .reveal ol {
+  margin-left: 1.1em;
+}
+
+.reveal .slides section img {
+  max-width: 95%;
+  height: auto;
+  display: block;
+  margin: 0.5rem auto;
+  border-radius: 6px;
+}
+
+.reveal h1, .reveal h2, .reveal h3 {
+  margin: 0 0 0.35em 0;
+}
+
+.reveal .slides section#title-slide {
+  background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+  border-radius: 10px;
+}
+
+.reveal .slides section#title-slide h1.title {
+  font-size: 1.3em !important;      
+  line-height: 1.15;
+  margin-bottom: 0.25em;
+  letter-spacing: 0.2px;
+}
+
+.reveal .slides section#title-slide p.subtitle {
+  font-size: 1.0em !important;
+  line-height: 1.2;
+  margin-top: 0.1em;
+  opacity: 0.9;
+}
+
+.reveal .slides section#title-slide .quarto-title-authors,
+.reveal .slides section#title-slide .quarto-title-author {
+  font-size: 0.95em !important;
+  line-height: 1.2;
+}
+
+.reveal .slides section#title-slide p.date {
+  font-size: 0.9em !important;
+  margin-top: 0.35em;
+  opacity: 0.8;
+}
+
+
+.reveal .slides section#title-slide {
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;   /* vertical center */
+  align-items: center;       /* horizontal center */
+  height: 100vh;
+  text-align: center;
+}
+
+.reveal .slides section#title-slide .title-block {
+  max-width: 80%;
+  margin: 0 auto;
+}
+
+
+.reveal .slides section#motivation {
+  background: #fffaf2;
+  border-left: 6px solid #ffcc80;
+  border-radius: 8px;
+  padding-left: 18px;
+}
+.reveal .slides section#motivation h2 { color: #cc7a00; }
+
+.reveal .slides section#research-question {
+  background: #f2f8ff;
+  border-left: 6px solid #90caf9;
+  border-radius: 8px;
+  padding-left: 18px;
+}
+.reveal .slides section#research-question h2 { color: #1565c0; }
+
+.reveal .slides section#dataset-overview,
+.reveal .slides section#dataset-overview---saratoga-housing-data {
+  background: #fbfdfd;
+  border-left: 6px solid #80cbc4;
+  border-radius: 8px;
+  padding-left: 18px;
+}
+
+.reveal table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  font-size: 0.9em;
+  margin: 0.6rem 0 0.2rem;
+}
+.reveal table th,
+.reveal table td {
+  padding: 10px 12px;
+  border: 1px solid #e6e6e6;
+}
+.reveal table th {
+  background: #f6f7fb;
+  font-weight: 600;
+  text-align: left;
+}
+.reveal table tr:nth-child(even) td { background: #fcfcfd; }
+.reveal caption {
+  caption-side: bottom;
+  font-size: 0.85em;
+  color: #666;
+  margin-top: 0.35rem;
+}
+
+
+.reveal pre code { font-size: 0.85em; line-height: 1.35; }
+.reveal code:not(pre code) {
+  background: #f3f4f7;
+  padding: 0.08em 0.35em;
+  border-radius: 4px;
+}
+
+
+.reveal .slides section.tight p,
+.reveal .slides section.tight li { margin: 0.25em 0; }
+
+
+.table-compact table { font-size: 0.50em; }
+.table-compact th, .table-compact td { padding: 2px 2px; }
+
+.reveal .slides section.smaller { --r-main-font-size: 10px; }
+
+.reveal .slides section#motivation,
+.reveal .slides section#research-question,
+.reveal .slides section#dataset-overview,
+.reveal .slides section#dataset-overview---saratoga-housing-data {
+  background: #ffffff;          
+  border-left: none;          
+  color: #000000;               
+  padding-left: 0;           
+  border-radius: 0;          
+}
+
+.reveal .slides section#motivation h2,
+.reveal .slides section#research-question h2,
+.reveal .slides section#dataset-overview h2,
+.reveal .slides section#dataset-overview---saratoga-housing-data h2 {
+  color: #000000;              
+}
+.cols-2 {
+  columns: 2;
+  column-gap: 50px;
+}
+.cols-2 > * {
+  break-inside: avoid;
+}
+
+.reveal .slides section .scrollable {
+  max-height: 62vh;        
+  overflow-y: auto;
+  padding-right: 8px;      
+}
+
+.reveal .slides section .scrollable caption { margin-top: 0.2rem; }

@@ -1,0 +1,224 @@
+---
+title: "What Really Drives House Prices? Comparing Unchangeable and Changeable Factors in New York State"
+subtitle: "Group L91G03"
+author: "Anne Do, Arielle Melamed, Serafina Aurelia, Eric Lee, Haresh Kumararajah"
+format: 
+  revealjs:
+    auto-slide: 20000
+    embed-resources: true
+    css: style.css     
+---
+
+```{r}
+
+# Libraries
+library(dplyr)
+library(ggplot2)
+library(scales)
+library(knitr)
+library(kableExtra)
+
+
+# Data load
+data <- read.delim(
+  "housing_prices.txt",
+  header = TRUE, sep = "\t",
+  quote = "", comment.char = "",
+  check.names = TRUE
+)
+
+# Basic checks
+missings <- colSums(is.na(data))
+
+# Coerce factors
+data <- data %>%
+  mutate(
+    Waterfront   = as.factor(Waterfront),
+    New.Construct = as.factor(New.Construct),
+    Central.Air  = as.factor(Central.Air),
+    Fuel.Type    = as.factor(Fuel.Type),
+    Heat.Type    = as.factor(Heat.Type),
+    Sewer.Type   = as.factor(Sewer.Type)
+  )
+
+# Clean
+data_cleaned <- data %>%
+  filter(Lot.Size > 0) %>%
+  filter(!(Age == 0 & New.Construct == 0))
+
+# Groupings
+unchangeable_vars <- c("Lot.Size", "Waterfront", "Age", "Land.Value")
+changeable_vars   <- c("Living.Area", "Bathrooms", "Bedrooms", "Rooms",
+                       "Central.Air", "New.Construct", "Heat.Type",
+                       "Fuel.Type", "Fireplaces")
+
+data_U <- data_cleaned[, c("Price", unchangeable_vars)]
+data_C <- data_cleaned[, c("Price", changeable_vars)]
+
+# --- Unchangeable models ---
+m0_U <- lm(Price ~ 1, data = data_U)
+m1_U <- lm(Price ~ ., data = data_U)
+step_fwd_U  <- step(m0_U, scope = list(lower = m0_U, upper = m1_U), direction = "forward", trace = FALSE)
+step_back_U <- step(m1_U, direction = "backward", trace = FALSE)
+step_both_U <- step(m0_U, scope = list(lower = m0_U, upper = m1_U), direction = "both",    trace = FALSE)
+
+# --- Changeable models ---
+m0_C <- lm(Price ~ 1, data = data_C)
+m1_C <- lm(Price ~ ., data = data_C)
+step_fwd_C  <- step(m0_C, scope = list(lower = m0_C, upper = m1_C), direction = "forward", trace = FALSE)
+step_back_C <- step(m1_C, direction = "backward", trace = FALSE)
+step_both_C <- step(m0_C, scope = list(lower = m0_C, upper = m1_C), direction = "both",    trace = FALSE)
+
+# Comparison table
+comparison <- data.frame(
+  Model = c("Unchangeable: Forward", "Unchangeable: Backward", "Unchangeable: Stepwise",
+            "Changeable: Forward",   "Changeable: Backward",   "Changeable: Stepwise"),
+  R2 = c(summary(step_fwd_U)$r.squared,
+         summary(step_back_U)$r.squared,
+         summary(step_both_U)$r.squared,
+         summary(step_fwd_C)$r.squared,
+         summary(step_back_C)$r.squared,
+         summary(step_both_C)$r.squared),
+  Adj_R2 = c(summary(step_fwd_U)$adj.r.squared,
+             summary(step_back_U)$adj.r.squared,
+             summary(step_both_U)$adj.r.squared,
+             summary(step_fwd_C)$adj.r.squared,
+             summary(step_back_C)$adj.r.squared,
+             summary(step_both_C)$adj.r.squared)
+)
+
+# Pick a final model 
+final_model <- step_both_C
+res_df <- data.frame(
+  fitted = fitted(final_model),
+  resid  = resid(final_model)
+)
+```
+
+## Motivation
+
+Housing affordability is a major issue. We want to know: how much of a house's price is due to location-based factors versus things owners can actually change?
+
+## Research Question
+
+*How much of housing price variation is explained by unchangeable vs. changeable factors?*
+
+-   Unchangeable factors: lot size, age, waterfront, land value
+
+-   Changeable factors: living area, bedrooms, bathrooms, central air, etc
+
+## Dataset Overview - Saratoga Housing Data
+
+-   **1734 observations**
+
+-   **17 variables**
+
+-   **Dependent Variable:** Price
+
+-   There are no missing values in the data
+
+::: table-compact
+```{r}
+kable(
+head(data, 5),
+caption = "First 5 rows"
+)
+```
+:::
+
+## Data Cleaning
+
+1.  Filter invalid data: 0 Lot Size
+2.  Remove inconsistent data where Age = 0 and New.Construct = 0
+3.  Convert certain variables from text/numeric to a categorical data type (Waterfront, New Construction, Central Air, Fuel Type, Heat Type, Sewer Type)
+
+## Variable Groupings - Changeable and Unchangeable
+
+```{r}
+
+unchangeable <- c("Lot.Size", "Waterfront", "Age", "Land.Value")
+changeable   <- c("Living.Area", "Bathrooms", "Bedrooms", "Rooms",
+                  "Central.Air", "New.Construct", "Heat.Type",
+                  "Fuel.Type", "Fireplaces")
+
+pad <- function(x, n) c(x, rep("", n - length(x)))
+n <- max(length(unchangeable), length(changeable))
+
+vars_side <- data.frame(
+  Unchangeable = pad(unchangeable, n),
+  Changeable   = pad(changeable, n),
+  check.names = FALSE
+)
+
+kable(vars_side, "html", align = "l") %>%
+  kable_styling(full_width = FALSE, position = "center")
+```
+
+## Variable Selection Approach - Stepwise
+
+-   We used **stepwise selection** methods to identify the most influential variables.
+
+-   Three approaches tested: **Forward**, **Backward**, and **Stepwise (both)**
+
+-   Each approach adds or removes variables based on the **Akaike Information Criterion (AIC)**.
+
+## Stepwise Results - Unchangeable Variables
+
+```{r}
+kable(coef(summary(step_fwd_U)), caption = "Unchangeable coefficients")
+kable(data.frame(
+Model = c("Forward","Backward", "Stepwise"),
+R2 = c(summary(step_fwd_U)$r.squared,summary(step_back_U)$r.squared, summary(step_both_U)$r.squared),
+Adj_R2 = c(summary(step_fwd_U)$adj.r.squared, summary(step_back_U)$adj.r.squared, summary(step_both_U)$adj.r.squared)
+), caption = "Unchangeable: performance summary")
+```
+
+## Stepwise Results - Changeable Variables
+
+```{}
+```
+
+::: table-compact
+
+```{r}
+options(knitr.kable.NA = "", kableExtra.latex.options = "scale_down")
+
+kable(coef(summary(step_fwd_C)), caption = "Changeable coefficients") 
+kable(data.frame( Model = c("Forward","Backward", "Stepwise"), R2 = c(summary(step_fwd_C)$r.squared,summary(step_back_C)$r.squared, summary(step_both_C)$r.squared),
+Adj_R2 = c(summary(step_fwd_C)$adj.r.squared, summary(step_back_C)$adj.r.squared, summary(step_both_C)$adj.r.squared) ), caption = "Changeable: performance summary")
+```
+:::
+
+## Model Evaluation: In-Sample Performance Test
+
+```{r}
+
+```
+
+## Out-of-Sample Performance Test 
+
+```{r}
+
+```
+
+## Final Chosen Model
+
+```{r}
+
+```
+
+## Assumption Check - Linearity
+
+## Assumption Check - Homoscedasticity
+
+## Assumption Check - Normality
+
+## Assumption Check - Multicollinearity
+
+## Discussion: Coefficients
+
+## Model Interpretation
+
+## Key Takeaways
+
+## Limitations and Future Work
