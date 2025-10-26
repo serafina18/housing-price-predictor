@@ -16,6 +16,8 @@ library(ggplot2)
 library(scales)
 library(knitr)
 library(kableExtra)
+library(ggfortify)
+library(patchwork)
 
 
 # Data load
@@ -309,20 +311,55 @@ results_tbl |>
 ```
 
 ## Assumption Check - Linearity
-```{r}
-autoplot(final_model, which = 1:2)
+```{r, message=FALSE, warning=FALSE}
+#autoplot(final_model, which = 1:2)
+
+vars <- c("Living.Area", "Log.Land.Value", "Bathrooms", "Log.Age")
+
+plots <- lapply(vars, function(v){
+  ggplot(data_cleaned, aes_string(v, resid(step_both_full))) +
+    geom_point(color = "gray40", size = 0.8) +
+    geom_hline(yintercept = 0) +
+    geom_smooth(method = "loess", se = FALSE) +
+    labs(x = v, y = "Residuals") +
+    theme_minimal(base_size = 9) +
+    theme(panel.grid.minor = element_blank(),
+          plot.title = element_text(size = 10),
+          axis.title = element_text(size = 8))
+})
+
+# Arrange them nicely: 2 columns
+combined <- wrap_plots(plots, ncol = 2)
+combined
+
 ```
 
 
 ## Assumption Check - Homoscedasticity
+```{r, message=FALSE}
+ggplot(data_cleaned, aes(x = fitted(step_both_full), y = resid(step_both_full))) +
+    geom_point(color = "gray40", size = 0.8) +
+    geom_hline(yintercept = 0) +
+    labs(x = "Fitted values", y = "Residuals") +
+    theme_minimal(base_size = 9) +
+    theme(panel.grid.minor = element_blank(),
+          plot.title = element_text(size = 10),
+          axis.title = element_text(size = 8))
+```
+Apart from a few points between 11.5 - 12.5, the spread looks reasonably constant over the range of fitted log price values. Hence, the homoscedasticity assumption for the residuals are satisfied.
 
 ## Assumption Check - Normality
+```{r}
+data_cleaned |> ggplot() + 
+  aes(sample = resid(step_both_full)) +
+  geom_qq(size = 2) + geom_qq_line()
+```
+The majority of the points lie quite close to the diagonal line in the Q-Q plot. Hence, the normality assumption for the residuals is well satisfied.
 
 ## Assumption Check - Multicollinearity
 ```{r}
-ignored_vars <- c("Log.Price", "Waterfront", "New.Construct", "Central.Air", "Fuel.Type", 
-                  "Heat.Type", "Sewer.Type", "Test", "Price", "Lot.Size", "Age", "Land.Value")
-numeric_data <- data_cleaned[, !(names(data_cleaned) %in% ignored_vars)]
+continuous_vars <- c("Living.Area", "Log.Land.Value", "Bathrooms", "Log.Age") # Fwd
+numeric_data <- data_cleaned[, (names(data_cleaned) %in% continuous_vars)]
 cor_mat = cor(numeric_data)
 melted_cor_mat = cor_mat |>
   data.frame() |>
