@@ -1,0 +1,171 @@
+---
+title: "DATA2902_EDA"
+output: html_document
+date: "2025-10-05"
+format: 
+  html: 
+    embed-resources: true # Creates a single HTML file as output
+    code-fold: true # Code folding; allows you to show/hide code chunks
+    code-tools: true # Includes a menu to download the code file 
+    self-contained: true
+---
+
+## Import Data and Libraries
+```{r setup, message = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
+
+pathname="/Users/ariellemelamed/Desktop/2025/Sem2/DATA2902/Group_Assignment/EDA/housing-prices-ge19.txt"
+data = read.delim(pathname)
+
+library(tidyverse)
+
+```
+
+IDEA
+
+What renovations and improvements should homeowners in Saratoga, New York, pursue to have the highest chance of maximising housing price? 
+- Central.Air, Fuel.Type, Bedrooms, Fireplaces, Bathrooms, Rooms
+
+
+```{r}
+head(data)
+```
+
+
+## Distribution of dependent variable (housing price)
+```{r}
+options(scipen=100)
+
+ggplot(data, aes(x = Price)) + 
+  geom_histogram(color="darkslateblue", fill="darkslategray3", bins=50) +
+  labs(title="Histogram Distribution of Housing Prices in New York", x="Housing Price", y="Frequency") +
+  geom_vline(aes(xintercept=mean(Price)), colour="red") +
+   geom_vline(aes(xintercept=median(Price)), colour="deeppink") +
+  annotate("label", 
+           x=mean(data$Price), 
+           y=230, 
+           label="Mean",
+           fill = "red", color = 'white',
+           size = 3.5) +
+  annotate("label", 
+           x=median(data$Price), 
+           y=215, 
+           label="Median",  
+           fill = "deeppink", color = 'white',
+           size = 3.5) 
+
+
+```
+
+## Boxplot of dependent variable
+```{r, fig.width=10, fig.height=6}
+
+Q1 <- quantile(data$Price, 0.25)
+Q3 <- quantile(data$Price, 0.75)
+median <- median(data$Price)
+
+ggplot(data, aes(x = Price)) + 
+  geom_boxplot(color="darkslateblue", fill="darkslategray3", 
+               outlier.color="red") +
+  labs(title="Boxplot Distribution of Housing Prices in New York") +
+    annotate("label", 
+           x=median,
+           y=0.37, 
+           label=paste(round(median)),
+           fill = "darkslateblue", color = 'white',
+           size = 3.5) +
+    annotate("label", 
+           x=Q1, 
+           y=0, 
+           label=paste(round(Q1)),
+           fill = "darkslateblue", color = 'white',
+           size = 3.5) +
+    annotate("label", 
+           x=Q3, 
+           y=0, 
+           label= paste(round(Q3)),
+           fill = "darkslateblue", color = 'white',
+           size = 3.5) 
+
+```
+# Predictor Variables and Dependent Variable
+## Land Value
+```{r}
+# Land.Value
+LVmodel <- lm(Price ~ Land.Value, data = data)
+LVsummary <- summary(LVmodel)
+LVr2 <- LVsummary$r.squared
+
+cor <- cor(data$Land.Value, data$Price)
+
+ggplot(data, aes(x=Land.Value, y=Price)) +
+  geom_point(color="darkslateblue", alpha=0.4) +
+  geom_smooth(method="lm", color="red") +
+  xlim(0, 120000) +
+  labs(title = "Scatter Plot of Land Value and Housing Price",
+       x="Land Value") +
+    annotate("label", 
+           x=100000, 
+           y=700000, 
+           label=paste("Correlation coefficient:", round(cor, 2)),
+           fill = "red", color = 'white',
+           size = 3.5)
+
+
+```
+
+```{r}
+LVsummary
+```
+
+## Heat Type
+```{r, fig.width=10, fig.height=6}
+heat_medians <- data %>% 
+  group_by(Heat.Type) %>% 
+  summarise(medians = median(Price, na.rm=TRUE))
+
+ggplot(data, aes(x=Heat.Type, y=Price, color=Heat.Type)) +
+  geom_boxplot() +
+  scale_color_brewer(palette = "Spectral") +
+  labs(title="Boxplots of Housing Price by Heat Type",
+       x="Heat Type",
+       y="Housing Price") +
+  geom_label(data = heat_medians, 
+             aes(x=Heat.Type, y=medians, label=round(medians), color=Heat.Type), 
+             size = 3.5) 
+```
+
+## QQ plots of Housing Price variable & log(Housing Price)
+```{r}
+qqnorm(data$Price, main = "QQ Plot of Price"); qqline(data$Price, col = "red")
+
+qqnorm(log(data$Price), main = "QQ Plot of log(Price)"); qqline(log(data$Price), col = "red")
+```
+## Shapiro Wilk tests
+```{r}
+library(gt)
+
+# Run tests
+test1 <- shapiro.test(data$Price)
+test2 <- shapiro.test(log(data$Price))
+
+# Create data frame of results
+results <- data.frame(
+  Variable = c("Price", "Log(Price)"),
+  W = c(round(test1$statistic, 3), round(test2$statistic, 3)),
+  Pvalue = c(format.pval(test1$p.value, digits = 3), format.pval(test2$p.value, digits = 3))
+)
+
+# Create gt table
+results %>%
+  gt() %>%
+  tab_header(
+    title = "Shapiro-Wilk Normality Test"
+  )
+```
+
+
+```{r}
+mean(data$Price)
+```
+
