@@ -213,15 +213,112 @@ Adj_R2 = c(summary(step_fwd_C)$adj.r.squared, summary(step_back_C)$adj.r.squared
 
 ## Model Evaluation: In-Sample Performance Test
 
-```{r}
+The Living Area model is the most robust among the single-predictor models, accounting for approximately 51% of the variation in housing prices. However, the full model that includes Living Area, Bathrooms, Land Value, and Waterfront properties achieves a considerably higher R² (around 0.63), indicating a better overall fit. This is further supported by the AIC values: the full model has the lowest AIC, suggesting it offers the optimal balance between explanatory power and model complexity.
 
+```{r}
+Living.Area_lm <- lm(Price ~ Living.Area, data = data_cleaned)
+Bathrooms_lm   <- lm(Price ~ Bathrooms, data = data_cleaned)
+Land.Value_lm  <- lm(Price ~ Land.Value, data = data_cleaned)
+Waterfront_lm  <- lm(Price ~ Waterfront, data = data_cleaned)
+lm_full_lm     <- lm(Price ~ Living.Area + Land.Value + Bathrooms + Waterfront, data = data_cleaned)
+
+models <- list(
+  Living.Area_lm,
+  Bathrooms_lm,
+  Land.Value_lm,
+  Waterfront_lm,
+  lm_full_lm
+)
+
+model_names <- c("Living.Area", "Bathrooms", "Land.Value", "Waterfront", "Full Model")
+
+in_sample_tbl <- tibble(
+  Model = model_names,
+  R2 = sapply(models, function(m) summary(m)$r.squared),
+  Adj_R2 = sapply(models, function(m) summary(m)$adj.r.squared),
+  AIC = sapply(models, AIC)
+)
+
+in_sample_tbl |>
+  mutate(across(where(is.numeric), round, 3)) |>
+  kable(col.names = c("Model", "R²", "Adjusted R²", "AIC"), align = "lccc") |>
+  kable_classic(full_width = FALSE)
 ```
+
 
 ## Out-of-Sample Performance Test 
 
+We compared several simple linear regression models using RMSE and MAE to assess out-of-sample predictive accuracy. Living Area alone was the most effective single predictor of price. However, the multiple regression model combining Living Area, Bathrooms, Land Value, and Waterfront produced the lowest overall prediction error, indicating that housing price is influenced by multiple property characteristics rather than any single factor.
+
 ```{r}
 
+
+set.seed(5)
+n = nrow(data_cleaned)
+n_train = floor(0.8*n)
+n_test = n - n_train
+
+grp_labs = rep(c("Train","Test"), times = c(n_train, n_test)) 
+data_cleaned$grp = sample(grp_labs)
+
+train_dat = data_cleaned |> dplyr::filter(grp == "Train")
+test_dat  = data_cleaned |> dplyr::filter(grp == "Test")
+Living.Area_train = lm(Price ~ Living.Area, data = train_dat)
+Living.Area_pred = predict(Living.Area_train, newdata = test_dat)
+# summary(Living.Area_train)
+Living.Area_mse = mean((test_dat$Price - Living.Area_pred)^2)
+# sqrt(Living.Area_mse) #regular root mean square
+Living.Area_mae = mean(abs(test_dat$Price - Living.Area_pred))
+# Living.Area_mae #mean absolute error which is less influenced by outliers.
+Bathrooms_train = lm(Price ~ Bathrooms, data = train_dat)
+Bathrooms_pred = predict(Bathrooms_train, newdata = test_dat)
+# summary(Bathrooms_train)
+Bathrooms_mse = mean((test_dat$Price - Bathrooms_pred)^2)
+# sqrt(Bathrooms_mse) #regular root mean square
+Bathrooms_mae = mean(abs(test_dat$Price - Bathrooms_pred))
+# Bathrooms_mae #mean absolute error which is less influenced by outliers.
+Land.Value_train = lm(Price ~ Land.Value, data = train_dat)
+Land.Value_pred = predict(Land.Value_train, newdata = test_dat)
+# summary(Land.Value_train)
+Land.Value_mse = mean((test_dat$Price - Land.Value_pred)^2)
+# sqrt(Land.Value_mse) #regular root mean square
+Land.Value_mae = mean(abs(test_dat$Price - Land.Value_pred))
+# Land.Value_mae #mean absolute error which is less influenced by outliers.
+Waterfront_train = lm(Price ~ Waterfront, data = train_dat)
+Waterfront_pred = predict(Waterfront_train, newdata = test_dat)
+# summary(Waterfront_train)
+Waterfront_mse = mean((test_dat$Price - Waterfront_pred)^2)
+# sqrt(Waterfront_mse) #regular root mean square
+Waterfront_mae = mean(abs(test_dat$Price - Waterfront_pred))
+# Waterfront_mae #mean absolute error which is less influenced by outliers.
+lm_full_train = lm(Price ~ Living.Area + Land.Value + Bathrooms + Waterfront, data = train_dat)
+test_dat = data_cleaned |> filter(grp == "Test")
+full_pred = predict(lm_full_train, newdata = test_dat)
+full_mse = mean((test_dat$Price - full_pred)^2)
+# sqrt(full_mse)
+full_mae = mean(abs(test_dat$Price - full_pred))
+# full_mae
+
+results_tbl <- tibble(
+  Model = c("Living.Area", "Bathrooms", "Land.Value", "Waterfront", "Full Model"),
+  RMSE = c(sqrt(Living.Area_mse),
+           sqrt(Bathrooms_mse),
+           sqrt(Land.Value_mse),
+           sqrt(Waterfront_mse),
+           sqrt(full_mse)),
+  MAE = c(Living.Area_mae,
+          Bathrooms_mae,
+          Land.Value_mae,
+          Waterfront_mae,
+          full_mae),
+)
+
+results_tbl |>
+  mutate(across(where(is.numeric), round, 2)) |>
+  kable(col.names = c("Model", "RMSE", "MAE"), align = "lcc") |>
+  kable_classic(full_width = FALSE)
 ```
+
 
 ## Final Chosen Model
 

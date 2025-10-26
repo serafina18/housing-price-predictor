@@ -1595,9 +1595,101 @@ Anne Do, Arielle Melamed, Serafina Aurelia, Eric Lee, Haresh Kumararajah
 </section>
 <section id="model-evaluation-in-sample-performance-test" class="slide level2">
 <h2>Model Evaluation: In-Sample Performance Test</h2>
+<p>The Living Area model is the most robust among the single-predictor models, accounting for approximately 51% of the variation in housing prices. However, the full model that includes Living Area, Bathrooms, Land Value, and Waterfront properties achieves a considerably higher R² (around 0.63), indicating a better overall fit. This is further supported by the AIC values: the full model has the lowest AIC, suggesting it offers the optimal balance between explanatory power and model complexity.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="lightable-classic caption-top" data-quarto-postprocess="true" style="font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">Model</th>
+<th style="text-align: center;" data-quarto-table-cell-role="th">R²</th>
+<th style="text-align: center;" data-quarto-table-cell-role="th">Adjusted R²</th>
+<th style="text-align: center;" data-quarto-table-cell-role="th">AIC</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Living.Area</td>
+<td style="text-align: center;">0.509</td>
+<td style="text-align: center;">0.508</td>
+<td style="text-align: center;">42246.40</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Bathrooms</td>
+<td style="text-align: center;">0.358</td>
+<td style="text-align: center;">0.357</td>
+<td style="text-align: center;">42697.77</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Land.Value</td>
+<td style="text-align: center;">0.324</td>
+<td style="text-align: center;">0.323</td>
+<td style="text-align: center;">42784.76</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Waterfront</td>
+<td style="text-align: center;">0.013</td>
+<td style="text-align: center;">0.012</td>
+<td style="text-align: center;">43421.20</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Full Model</td>
+<td style="text-align: center;">0.628</td>
+<td style="text-align: center;">0.627</td>
+<td style="text-align: center;">41782.72</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
 </section>
 <section id="out-of-sample-performance-test" class="slide level2">
 <h2>Out-of-Sample Performance Test</h2>
+<p>We compared several simple linear regression models using RMSE and MAE to assess out-of-sample predictive accuracy. Living Area alone was the most effective single predictor of price. However, the multiple regression model combining Living Area, Bathrooms, Land Value, and Waterfront produced the lowest overall prediction error, indicating that housing price is influenced by multiple property characteristics rather than any single factor.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="lightable-classic caption-top" data-quarto-postprocess="true" style="font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">Model</th>
+<th style="text-align: center;" data-quarto-table-cell-role="th">RMSE</th>
+<th style="text-align: center;" data-quarto-table-cell-role="th">MAE</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Living.Area</td>
+<td style="text-align: center;">54895.48</td>
+<td style="text-align: center;">42786.50</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Bathrooms</td>
+<td style="text-align: center;">68827.43</td>
+<td style="text-align: center;">52118.96</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Land.Value</td>
+<td style="text-align: center;">75636.56</td>
+<td style="text-align: center;">57026.21</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Waterfront</td>
+<td style="text-align: center;">91502.53</td>
+<td style="text-align: center;">71109.60</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Full Model</td>
+<td style="text-align: center;">51229.12</td>
+<td style="text-align: center;">39460.35</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
 </section>
 <section id="final-chosen-model" class="slide level2">
 <h2>Final Chosen Model</h2>
