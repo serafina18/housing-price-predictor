@@ -256,7 +256,25 @@ e.g., build a second storey with a bathroom
 
 <img src="https://phinneydesign.com/wp-content/uploads/2020/05/550Waterfront-200831-28_edit-scaled.jpg" style="width:70%; display:block; margin:0 auto;">
 
-## Model Interpretation
-?
 
 ## Limitations and Future Work
+:::: {.columns}
+::: {.column width="40%"}
+#### Representativeness 
+- 2006, GFC
+- Saratoga ≠ NYC: suburban ≠ urban
+
+#### Unrecorded variables
+
+#### Risk of overfitting
+
+#### Future work
+- More recent / time series
+- More variables
+- Interactive geographic visualisations 
+
+:::
+::: {.column width="60%"}
+<img src="https://lh3.googleusercontent.com/proxy/XMJ6hvlvaUW5ogMkMWKEoj7q42L4P8Z2MCYOvtkOROAYGaSDgxX0G1qIRDyGYK-PP0XoGNa9cU7246N9KyhhXIm4CO3WRcTu_Rc" style="width:100%; display:block; margin:0 auto;">
+:::
+::::
