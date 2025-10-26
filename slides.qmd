@@ -21,7 +21,7 @@ library(kableExtra)
 
 # Data load
 data <- read.delim(
-  "housing_prices.txt",
+  "housing-prices-ge19.txt",
   header = TRUE, sep = "\t",
   quote = "", comment.char = "",
   check.names = TRUE
@@ -95,20 +95,20 @@ res_df <- data.frame(
 )
 ```
 
-## Motivation
+## Approach
+- Through who's lens should we view the data?
+- Perspectives: 
+  - A homeowner considering renovations to their house to improve their property value (maybe before selling) or 
+  - A property developer that, already having access to some piece of land is considering what type of houses to build on it
+- Expanding on to that, how much of the price of the house is dependent on things that are changeable? To what extent can the developer or homeowner actually increase their returns having already acquired land or a pre-built property.
+- To what extent do immutable property characteristics, compared to changeable attributes, explain housing price variation?
 
-Housing affordability is a major issue. We want to know: how much of a house's price is due to location-based factors versus things owners can actually change?
 
-## Research Question
-
-*How much of housing price variation is explained by unchangeable vs. changeable factors?*
-
--   Unchangeable factors: lot size, age, waterfront, land value
-
--   Changeable factors: living area, bedrooms, bathrooms, central air, etc
 
 ## Dataset Overview - Saratoga Housing Data
+:::: {.columns}
 
+:::{.column}
 -   **1734 observations**
 
 -   **17 variables**
@@ -117,14 +117,36 @@ Housing affordability is a major issue. We want to know: how much of a house's p
 
 -   There are no missing values in the data
 
-::: table-compact
-```{r}
-kable(
-head(data, 5),
-caption = "First 5 rows"
-)
-```
+-   Unchangeable factors: lot size, age, waterfront, land value
+
+-   Changeable factors: living area, bedrooms, bathrooms, central air, etc
+
 :::
+
+:::{.column height = }
+Column | Unit | Notes
+-----|-----:
+Price	| $USD | -
+Lot.Size	| Acres | -
+Waterfront	| Boolean | -
+Age	| Years | -
+Land.Value	| $USD | -
+New.Construct	| Boolean | -
+Central.Air	| Boolean | -
+Fuel.Type	|  | -
+Heat.Type	|  | -
+Sewer.Type	| Public/Private | -
+Living.Area	| sq^2 | -
+Pct.College	| % | Percentage College Education
+Bedrooms	| N/A | -
+Fireplaces	| N/A | -
+Bathrooms	| N/A | -
+Rooms	| N/A | -
+Test| N/A | -
+
+:::
+
+::::
 
 ## Data Cleaning
 
