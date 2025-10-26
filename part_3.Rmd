@@ -241,3 +241,107 @@ exp(coef(logistic_model))
 
 ```
 
+
+```{r}
+# Libraries
+library(dplyr)
+library(ggplot2)
+library(scales)
+library(knitr)
+library(kableExtra)
+library(ggfortify)
+library(patchwork)
+library(mplot)
+
+# Data load
+data <- read.delim(
+  "housing-prices-ge19.txt",
+  header = TRUE, sep = "\t",
+  quote = "", comment.char = "",
+  check.names = TRUE
+)
+
+# Basic checks
+missings <- colSums(is.na(data))
+
+# Coerce factors
+data <- data %>%
+  mutate(
+    Waterfront   = as.factor(Waterfront),
+    New.Construct = as.factor(New.Construct),
+    Central.Air  = as.factor(Central.Air),
+    Fuel.Type    = as.factor(Fuel.Type),
+    Heat.Type    = as.factor(Heat.Type),
+    Sewer.Type   = as.factor(Sewer.Type),
+  )
+
+# Clean
+data_cleaned <- data %>%
+  filter(Lot.Size > 0) %>%
+  filter(!(Age == 0 & New.Construct == 0))
+
+data_cleaned <- data_cleaned %>%
+  mutate(
+    Log.Price = log(Price),
+    Log.Lot.Size = log(Lot.Size),
+    Log.Age = ifelse(Age != 0, log(Age), 0),
+    Log.Land.Value = log(Land.Value)
+  ) %>%
+  select(-Price, -Lot.Size, -Age, -Land.Value, -Test)
+
+# --- STEPWISE SELECTION ON FULL MODEL ---
+
+M0_null <- lm(Log.Price ~ 1, data = data_cleaned)
+M1_full <- lm(Log.Price ~ ., data = data_cleaned)
+
+#Forward
+step_fwd_full <- step(
+  M0_null,
+  scope = list(lower = M0_null, upper = M1_full),
+  direction = "forward",
+  trace = FALSE
+)
+summary(step_fwd_full)
+
+#Backward
+step_back_full <- step(
+  M1_full,
+  direction = "backward",
+  trace = FALSE
+)
+summary(step_back_full)
+
+#Stepwise
+step_both_full <- step(
+  M0_null,
+  scope = list(lower = M0_null, upper = M1_full),
+  direction = "both",
+  trace = FALSE
+)
+summary(step_both_full)
+```
+
+
+```{r}
+vis.d.int = vis(step_back_full)
+
+
+```
+
+```{r}
+save(step_back_full, vis.d.int, file = "modelStab.RData")
+```
+
+```{r}
+plot(vis.d.int, which = "vip", interactive = FALSE)
+```
+
+```{r}
+plot(vis.d.int, which = "boot", interactive = TRUE)
+
+```
+
+```{r}
+plot(vis.d.int, which = "vip", interactive = TRUE)
+```
+
