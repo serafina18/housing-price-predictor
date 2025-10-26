@@ -90,7 +90,9 @@ step_both_full <- step(
 # AIC(step_fwd_full)
 # AIC(step_back_full)
 # AIC(step_both_full)
+
 ```
+
 
 ## Approach
 - Through who's lens should we view the data?
@@ -141,6 +143,31 @@ Test| N/A | Random
 2.  Remove inconsistent data where Age = 0 and New.Construct = 0
 3.  Convert certain variables from text/numeric to a categorical data type (Waterfront, New Construction, Central Air, Fuel Type, Heat Type, Sewer Type)
 4.  Log transformation for variables with skewed data: Price, Lot Size, Age, Land Value
+
+```{r}
+options(scipen=100)
+
+plot1 <- ggplot(data, aes(x = Price)) + 
+  geom_histogram(color="darkslateblue", fill="darkslategray3", bins=50) +
+  labs(title="Histogram Distribution of Housing Prices in New York", x="Housing Price", y="Frequency") +
+  geom_vline(aes(xintercept=mean(Price)), colour="red") +
+   geom_vline(aes(xintercept=median(Price)), colour="deeppink") +
+  annotate("label", 
+           x=mean(data$Price), 
+           y=230, 
+           label="Mean",
+           fill = "red", color = 'white',
+           size = 3.5) +
+  annotate("label", 
+           x=median(data$Price), 
+           y=215, 
+           label="Median",  
+           fill = "deeppink", color = 'white',
+           size = 3.5) 
+
+plot1
+```
+
 
 ## Variable Groupings - Changeable and Unchangeable
 - 38% of the variation of house prices is explained by factors that are unchangeable (R2 = 0.38)
