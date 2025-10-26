@@ -216,9 +216,47 @@ Adj_R2 = c(summary(step_fwd_C)$adj.r.squared, summary(step_back_C)$adj.r.squared
 ## Assumption Check - Multicollinearity
 
 ## Discussion: Coefficients
+If living area *increases* by 1 square foot, the housing price is expected to *increase* by **USD$68.19**. 
+
+
+If land value *increases* by USD$1, 
+the housing price is expected to *increase* by **$0.994**
+
+If one extra bathroom is added, the housing price is expected to *increase* by **$27,566**
+
+
+If a property features one more waterfront, the housing price is expected to be **$151,261** *greater*. 
+
+<img src="https://www.wikihow.com/images/thumb/7/71/Identify-Dependent-and-Independent-Variables-Step-2.jpg/v4-460px-Identify-Dependent-and-Independent-Variables-Step-2.jpg" style="width:70%; display:block; margin:0 auto;">
+
+
+
+
+## Key Takeaways - changeable
+**Changeable attributes** (living area, bathroom): useful for *homeowners* looking to renovate and increase the value of their house. 
+e.g., build a second storey with a bathroom
+
+- Renovation choice: $405\ \text{sq ft} \approx 1\ \text{bathroom}$
+- Average bathroom size in the US: 40-100 square feet
+- Practical considerations: construction costs etc.
+
+<img src="https://bathtrendsusa.com/cdn/shop/files/24.jpg?v=1721336556&width=2800" style="width:70%; display:block; margin:0 auto;">
+
+
+## Key Takeaways - immutable
+**Immutable attributes** (land value, waterfront): useful for *prospective buyers/sellers*. 
+
+- Waterfront is associated the highest increase in housing price
+
+**Changeable and unchangeable attributes both matter.**
+
+- For both users, this helps set realistic expectations
+- Buyers: renovation is not everything 
+- Homeowners: don't be complacent if you have a nice waterfront
+
+<img src="https://phinneydesign.com/wp-content/uploads/2020/05/550Waterfront-200831-28_edit-scaled.jpg" style="width:70%; display:block; margin:0 auto;">
 
 ## Model Interpretation
-
-## Key Takeaways
+?
 
 ## Limitations and Future Work
