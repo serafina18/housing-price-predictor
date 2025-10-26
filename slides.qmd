@@ -119,7 +119,7 @@ res_df <- data.frame(
 
 -   Saratoga County, New York State, 2006
 
-- Collected for a case study: "How much is a Fireplace Worth"
+- Collected for a case study: "How much is a Fireplace Worth?"
 
 :::
 
