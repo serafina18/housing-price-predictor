@@ -117,32 +117,19 @@ res_df <- data.frame(
 
 -   There are no missing values in the data
 
--   Unchangeable factors: lot size, age, waterfront, land value
+-   Saratoga County, New York State, 2006
 
--   Changeable factors: living area, bedrooms, bathrooms, central air, etc
+- Collected for a case study: "How much is a Fireplace Worth"
 
 :::
 
-:::{.column height = }
+:::{.column}
 Column | Unit | Notes
------|-----:
-Price	| $USD | -
+-----|----- | ----- 
 Lot.Size	| Acres | -
-Waterfront	| Boolean | -
-Age	| Years | -
-Land.Value	| $USD | -
-New.Construct	| Boolean | -
-Central.Air	| Boolean | -
-Fuel.Type	|  | -
-Heat.Type	|  | -
-Sewer.Type	| Public/Private | -
 Living.Area	| sq^2 | -
 Pct.College	| % | Percentage College Education
-Bedrooms	| N/A | -
-Fireplaces	| N/A | -
-Bathrooms	| N/A | -
-Rooms	| N/A | -
-Test| N/A | -
+Test| N/A | Random
 
 :::
 
