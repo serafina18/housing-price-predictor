@@ -86,6 +86,10 @@ step_both_full <- step(
   trace = FALSE
 )
 summary(step_both_full)
+
+# AIC(step_fwd_full)
+# AIC(step_back_full)
+# AIC(step_both_full)
 ```
 
 ## Approach
@@ -168,38 +172,38 @@ kable(vars_side, "html", align = "l") %>%
 
 -   Each approach adds or removes variables based on the **Akaike Information Criterion (AIC)**.
 
-## Stepwise Results - Unchangeable Variables
+## Stepwise Results
 
 ```{r}
-# kable(coef(summary(step_fwd_U)), caption = "Unchangeable coefficients")
-# kable(data.frame(
-# Model = c("Forward","Backward", "Stepwise"),
-# R2 = c(summary(step_fwd_U)$r.squared,summary(step_back_U)$r.squared, summary(step_both_U)$r.squared),
-# Adj_R2 = c(summary(step_fwd_U)$adj.r.squared, summary(step_back_U)$adj.r.squared, summary(step_both_U)$adj.r.squared)
-# ), caption = "Unchangeable: performance summary")
+
+results_tbl <- data.frame(
+  Model = c("Forward", "Backward", "Stepwise"),
+  R2 = c(summary(step_fwd_full)$r.squared,
+         summary(step_back_full)$r.squared,
+         summary(step_both_full)$r.squared),
+  Adj_R2 = c(summary(step_fwd_full)$adj.r.squared,
+             summary(step_back_full)$adj.r.squared,
+             summary(step_both_full)$adj.r.squared),
+  AIC = c(AIC(step_fwd_full),
+          AIC(step_back_full),
+          AIC(step_both_full))
+)
+
+options(knitr.kable.NA = "", kableExtra.latex.options = "scale_down")
+
+kable(results_tbl,
+      caption = "Forward, Backward, and Stepwise Selection Summary (Full Model)",
+      col.names = c("Model", "R²", "Adjusted R²", "AIC"),
+      align = "lccc") |>
+  kable_classic(full_width = FALSE)
+
 ```
 
-## Stepwise Results - Changeable Variables
 
-```{r}
-```
-
-::: table-compact
-
-```{r}
-# options(knitr.kable.NA = "", kableExtra.latex.options = "scale_down")
-# 
-# kable(coef(summary(step_fwd_C)), caption = "Changeable coefficients") 
-# kable(data.frame( Model = c("Forward","Backward", "Stepwise"), R2 = c(summary(step_fwd_C)$r.squared,summary(step_back_C)$r.squared, summary(step_both_C)$r.squared),
-# Adj_R2 = c(summary(step_fwd_C)$adj.r.squared, summary(step_back_C)$adj.r.squared, summary(step_both_C)$adj.r.squared) ), caption = "Changeable: performance summary")
-```
-:::
 ## Model Evaluation: In-Sample Performance Test
 
-- The Living Area model is the most robust among the single-predictor models.  
-- It accounts for approximately 51% of the variation in housing prices.  
-- The comprehensive model includes Living Area, Bathrooms, Land Value, and Waterfront properties.  
-- The comprehensive model achieves a higher R² (around 0.63), indicating a better overall fit.  
+- The Living Area model is the most best among the single-predictor models.  
+- The full model achieves a higher R² (around 0.63), indicating a better overall fit.  
 
 ```{r}
 # Living.Area
@@ -214,30 +218,33 @@ Living.Area_lm <- lm(Log.Price ~ Living.Area, data = data_cleaned)
 Bathrooms_lm   <- lm(Log.Price ~ Bathrooms, data = data_cleaned)
 Land.Value_lm  <- lm(Log.Price ~ Log.Land.Value, data = data_cleaned)
 Waterfront_lm  <- lm(Log.Price ~ Waterfront, data = data_cleaned)
-Heat.Type_lm  <- lm(Log.Price ~ Heat.Type, data = data_cleaned)
+Fuel.Type_lm  <- lm(Log.Price ~ Fuel.Type, data = data_cleaned)
 Age_lm  <- lm(Log.Price ~ Log.Age, data = data_cleaned)
 New.Construct_lm  <- lm(Log.Price ~ New.Construct, data = data_cleaned)
+Central.Air_lm  <- lm(Log.Price ~ Central.Air, data = data_cleaned)
 
-lm_full_lm     <- lm(Log.Price ~ Living.Area + Log.Land.Value + Bathrooms + Waterfront + Heat.Type + Log.Age + New.Construct, data = data_cleaned)
+lm_full_lm     <- lm(Log.Price ~ Living.Area + Log.Land.Value + Bathrooms + Waterfront + Fuel.Type + Log.Age + New.Construct, data = data_cleaned)
 
-changable_lm     <- lm(Log.Price ~ Living.Area + Bathrooms + Heat.Type + New.Construct, data = data_cleaned)
+changable_lm     <- lm(Log.Price ~ Living.Area + Bathrooms + Fuel.Type + New.Construct, data = data_cleaned)
 
 unchangable_lm     <- lm(Log.Price ~ Log.Land.Value + Waterfront +  Log.Age, data = data_cleaned)
 
 models <- list(
   Living.Area_lm,
   Bathrooms_lm,
-  Land.Value_lm,
-  Waterfront_lm,
-  Heat.Type_lm,
-  Age_lm,
-  New.Construct_lm,
+  # Land.Value_lm,
+  # Waterfront_lm,
+  # Fuel.Type_lm,
+  # Age_lm,
+  # New.Construct_lm,
+  # Central.Air_lm,
   lm_full_lm,
   changable_lm,
   unchangable_lm
 )
 
-model_names <- c("Living Area", "Bathrooms", "Land Value", "Waterfront", "Heat Type", "Age", "New Construct", "Full Model", "Changable Variables", "Unchagable Variables")
+# model_names <- c("Living Area", "Bathrooms", "Land Value", "Waterfront", "Fuel Type", "Age", "New Construct", "Central Air", "Full Model", "Changable Variables", "Unchagable Variables")
+model_names <- c("Living Area", "Bathrooms", "Full Model", "Changable Variables", "Unchagable Variables")
 
 in_sample_tbl <- tibble(
   Model = model_names,
@@ -255,9 +262,7 @@ in_sample_tbl |>
 
 ## Out-of-Sample Performance Test 
 
-- We compared several simple linear regression models using RMSE and MAE to assess out-of-sample predictive accuracy.  
 - Living Area alone was the most effective single predictor of price.  
-- The multiple regression model combining Living Area, Bathrooms, Land Value, and Waterfront produced the lowest overall prediction error.  
 - This indicates that housing price is influenced by multiple property characteristics rather than any single factor.
 
 ```{r}
@@ -265,7 +270,7 @@ in_sample_tbl |>
 # Log.Land.Value
 # Bathrooms
 # Waterfront
-# Heat.Type
+# Fuel.Type
 # Log.Age
 # New.Construct
 
@@ -285,47 +290,83 @@ Living.Area_pred = predict(Living.Area_train, newdata = test_dat)
 Living.Area_mse = mean((test_dat$Log.Price - Living.Area_pred)^2)
 Living.Area_mae = mean(abs(test_dat$Log.Price - Living.Area_pred))
 
+Log.Land.Value_train = lm(Log.Price ~ Log.Land.Value, data = train_dat)
+Log.Land.Value_pred = predict(Log.Land.Value_train, newdata = test_dat)
+Log.Land.Value_mse = mean((test_dat$Log.Price - Log.Land.Value_pred)^2)
+Log.Land.Value_mae = mean(abs(test_dat$Log.Price - Log.Land.Value_pred))
+
+Fuel.Type_train = lm(Log.Price ~ Fuel.Type, data = train_dat)
+Fuel.Type_pred = predict(Fuel.Type_train, newdata = test_dat)
+Fuel.Type_mse = mean((test_dat$Log.Price - Fuel.Type_pred)^2)
+Fuel.Type_mae = mean(abs(test_dat$Log.Price - Fuel.Type_pred))
+
+Log.Age_train = lm(Log.Price ~ Log.Age, data = train_dat)
+Log.Age_pred = predict(Log.Age_train, newdata = test_dat)
+Log.Age_mse = mean((test_dat$Log.Price - Log.Age_pred)^2)
+Log.Age_mae = mean(abs(test_dat$Log.Price - Log.Age_pred))
+
+New.Construct_train = lm(Log.Price ~ New.Construct, data = train_dat)
+New.Construct_pred = predict(New.Construct_train, newdata = test_dat)
+New.Construct_mse = mean((test_dat$Log.Price - New.Construct_pred)^2)
+New.Construct_mae = mean(abs(test_dat$Log.Price - New.Construct_pred))
+
 Bathrooms_train = lm(Log.Price ~ Bathrooms, data = train_dat)
 Bathrooms_pred = predict(Bathrooms_train, newdata = test_dat)
-# summary(Bathrooms_train)
 Bathrooms_mse = mean((test_dat$Log.Price - Bathrooms_pred)^2)
-# sqrt(Bathrooms_mse) #regular root mean square
 Bathrooms_mae = mean(abs(test_dat$Log.Price - Bathrooms_pred))
-# Bathrooms_mae #mean absolute error which is less influenced by outliers.
-Land.Value_train = lm(Log.Price ~ Land.Value, data = train_dat)
-Land.Value_pred = predict(Land.Value_train, newdata = test_dat)
-# summary(Land.Value_train)
-Land.Value_mse = mean((test_dat$Log.Price - Land.Value_pred)^2)
-# sqrt(Land.Value_mse) #regular root mean square
-Land.Value_mae = mean(abs(test_dat$Log.Price - Land.Value_pred))
-# Land.Value_mae #mean absolute error which is less influenced by outliers.
+
 Waterfront_train = lm(Log.Price ~ Waterfront, data = train_dat)
 Waterfront_pred = predict(Waterfront_train, newdata = test_dat)
-# summary(Waterfront_train)
 Waterfront_mse = mean((test_dat$Log.Price - Waterfront_pred)^2)
-# sqrt(Waterfront_mse) #regular root mean square
-Waterfront_mae = mean(abs(test_dat$Log.Price - Waterfront_pred))
-# Waterfront_mae #mean absolute error which is less influenced by outliers.
-lm_full_train = lm(Log.Price ~ Living.Area + Land.Value + Bathrooms + Waterfront, data = train_dat)
-test_dat = data_cleaned |> filter(grp == "Test")
+Waterfront_mae = mean(abs(test_dat$Log.Price - Waterfront_pred)) 
+
+Central.Air_train = lm(Log.Price ~ Central.Air, data = train_dat)
+Central.Air_pred = predict(Central.Air_train, newdata = test_dat)
+Central.Air_mse = mean((test_dat$Log.Price - Central.Air_pred)^2)
+Central.Air_mae = mean(abs(test_dat$Log.Price - Central.Air_pred)) 
+
+lm_full_train     <- lm(Log.Price ~ Living.Area + Log.Land.Value + Bathrooms + Waterfront + Fuel.Type + Log.Age + New.Construct + Central.Air, data = train_dat)
 full_pred = predict(lm_full_train, newdata = test_dat)
 full_mse = mean((test_dat$Log.Price - full_pred)^2)
-# sqrt(full_mse)
 full_mae = mean(abs(test_dat$Log.Price - full_pred))
-# full_mae
+
+changable_lm     <- lm(Log.Price ~ Living.Area + Bathrooms + Fuel.Type + New.Construct + Central.Air, data = train_dat)
+changable_pred = predict(lm_full_train, newdata = test_dat)
+changable_mse = mean((test_dat$Log.Price - changable_pred)^2)
+changable_mae = mean(abs(test_dat$Log.Price - changable_pred))
+
+unchangable_lm     <- lm(Log.Price ~ Log.Land.Value + Waterfront +  Log.Age, data = train_dat)
+unchangable_pred = predict(unchangable_lm, newdata = test_dat)
+unchangable_mse = mean((test_dat$Log.Price - unchangable_pred)^2)
+unchangable_mae = mean(abs(test_dat$Log.Price - unchangable_pred))
 
 results_tbl <- tibble(
-  Model = c("Living.Area", "Bathrooms", "Land.Value", "Waterfront", "Full Model"),
+  # Model = c("Living Area", "Bathrooms", "Land Value", "Waterfront", "Fuel Type", "Age", "New Construct", "Central.Air", "Full Model", "Changable Variables", "Unchagable Variables"),
+    Model = c("Living Area", "Bathrooms", "Full Model", "Changable Variables", "Unchagable Variables"),
   RMSE = c(sqrt(Living.Area_mse),
            sqrt(Bathrooms_mse),
-           sqrt(Land.Value_mse),
-           sqrt(Waterfront_mse),
-           sqrt(full_mse)),
+           # sqrt(Log.Land.Value_mse),
+           # sqrt(Waterfront_mse),
+           # sqrt(Fuel.Type_mse),
+           # sqrt(Log.Age_mse),
+           # sqrt(New.Construct_mse),
+           # sqrt(Central.Air_mse),
+           
+           sqrt(full_mse),
+           sqrt(changable_mse),
+           sqrt(unchangable_mse)),
   MAE = c(Living.Area_mae,
           Bathrooms_mae,
-          Land.Value_mae,
-          Waterfront_mae,
-          full_mae),
+          # Log.Land.Value_mae,
+          # Waterfront_mae,
+          # Fuel.Type_mae,
+          # Log.Age_mae,
+          # New.Construct_mae,
+          # Central.Air_mae,
+          
+          full_mae,
+          changable_mae,
+          unchangable_mae),
 )
 
 results_tbl |>
@@ -338,13 +379,12 @@ results_tbl |>
 
 ```{r}
 
-
+summary(step_back_full)
 
 ```
 
 ## Assumption Check - Linearity
 ```{r, message=FALSE, warning=FALSE}
-#autoplot(final_model, which = 1:2)
 
 vars <- c("Living.Area", "Log.Land.Value", "Bathrooms", "Log.Age")
 
@@ -365,7 +405,7 @@ combined <- wrap_plots(plots, ncol = 2)
 combined
 
 ```
-
+The residuals are relatively randomly scattered around the zero lines. Hence, the linearity assumption is satisfied.
 
 ## Assumption Check - Homoscedasticity
 ```{r, message=FALSE}
@@ -378,13 +418,15 @@ ggplot(data_cleaned, aes(x = fitted(step_both_full), y = resid(step_both_full)))
           plot.title = element_text(size = 10),
           axis.title = element_text(size = 8))
 ```
-Apart from a few points between 11.5 - 12.5, the spread looks reasonably constant over the range of fitted log price values. Hence, the homoscedasticity assumption for the residuals are satisfied.
+The spread looks reasonably constant over the range of fitted log price values. Hence, the homoscedasticity assumption for the residuals is satisfied.
 
 ## Assumption Check - Normality
 ```{r}
 data_cleaned |> ggplot() + 
   aes(sample = resid(step_both_full)) +
-  geom_qq(size = 2) + geom_qq_line()
+  geom_qq(size = 2) + geom_qq_line() +
+  labs(title = "Normal Q-Q", x = "Theoretical quantiles", y = "Standardized residuals") +
+  theme_minimal()
 ```
 The majority of the points lie quite close to the diagonal line in the Q-Q plot. Hence, the normality assumption for the residuals is well satisfied.
 
