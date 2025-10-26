@@ -1,4 +1,39 @@
 
+## Model Evaluation: In-Sample Performance Test
+
+The Living Area model is the strongest among the single-predictor models, explaining about 51% of the variation in housing prices. However, the full model including Living Area, Bathrooms, Land Value, and Waterfront achieves a substantially higher R² (≈ 0.63), indicating a better overall fit. This is supported by the AIC values: the full model has the lowest AIC, meaning it provides the best balance of explanatory power and model complexity.
+
+```{r}
+Living.Area_lm <- lm(Price ~ Living.Area, data = data_cleaned)
+Bathrooms_lm   <- lm(Price ~ Bathrooms, data = data_cleaned)
+Land.Value_lm  <- lm(Price ~ Land.Value, data = data_cleaned)
+Waterfront_lm  <- lm(Price ~ Waterfront, data = data_cleaned)
+lm_full_lm     <- lm(Price ~ Living.Area + Land.Value + Bathrooms + Waterfront, data = data_cleaned)
+
+models <- list(
+  Living.Area_lm,
+  Bathrooms_lm,
+  Land.Value_lm,
+  Waterfront_lm,
+  lm_full_lm
+)
+
+model_names <- c("Living.Area", "Bathrooms", "Land.Value", "Waterfront", "Full Model")
+
+in_sample_tbl <- tibble(
+  Model = model_names,
+  R2 = sapply(models, function(m) summary(m)$r.squared),
+  Adj_R2 = sapply(models, function(m) summary(m)$adj.r.squared),
+  AIC = sapply(models, AIC)
+)
+
+in_sample_tbl |>
+  mutate(across(where(is.numeric), round, 3)) |>
+  kable(col.names = c("Model", "R²", "Adjusted R²", "AIC"), align = "lccc") |>
+  kable_classic(full_width = FALSE)
+```
+
+
 ## Out-of-Sample Performance Test 
 
 We compared several simple linear regression models using RMSE and MAE to assess out-of-sample predictive accuracy. Living Area alone was the most effective single predictor of price. However, the multiple regression model combining Living Area, Bathrooms, Land Value, and Waterfront produced the lowest overall prediction error, indicating that housing price is influenced by multiple property characteristics rather than any single factor.
