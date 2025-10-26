@@ -461,35 +461,46 @@ melted_cor_mat |> ggplot() +
 There is no multicollinearity as no pair of predictors are highly correlated (i.e., having |r| > 0.8).
 
 ## Discussion: Coefficients
-If living area *increases* by 1 square foot, the housing price is expected to *increase* by **USD$68.19**. 
+:::: {.columns}
+::: {.column width="60%"}
+```{r}
+library(tibble)
+library(gt)
 
+effects <- tribble(
+  ~Variable,           ~`Change in unit`, ~`Impact on price (%)`,
+  "Living area",       "+100 sq ft",      "+2.89%",
+  "Land value",        "+10%",            "+1.18%",
+  "Bathrooms",         "+1",              "+10.26%",
+  "Waterfront",        "Yes",             "+76.03%",
+  "Central air",       "Yes",             "+5.82%",
+  "Fuel: gas",         "Yes",   "+8.66%",
+  "Fuel: wood",        "Yes",   "-64.12%",
+  "Age",               "+10%",            "-0.50%",
+  "New construction",  "Yes",             "-21.82%"
+)
 
-If land value *increases* by USD$1, 
-the housing price is expected to *increase* by **$0.994**
+gt(effects)
+```
 
-If one extra bathroom is added, the housing price is expected to *increase* by **$27,566**
+:::
+::: {.column width="40%"}
+<img src="https://www.wikihow.com/images/thumb/7/71/Identify-Dependent-and-Independent-Variables-Step-2.jpg/v4-460px-Identify-Dependent-and-Independent-Variables-Step-2.jpg" style="width:120%; display:block; margin:0 auto;">
+:::
+::::
 
+## Key Takeaways - Changeable attributes
+Useful for *homeowners* looking to renovate and increase the value of their house. 
 
-If a property features one more waterfront, the housing price is expected to be **$151,261** *greater*. 
-
-<img src="https://www.wikihow.com/images/thumb/7/71/Identify-Dependent-and-Independent-Variables-Step-2.jpg/v4-460px-Identify-Dependent-and-Independent-Variables-Step-2.jpg" style="width:70%; display:block; margin:0 auto;">
-
-
-
-
-## Key Takeaways - changeable
-**Changeable attributes** (living area, bathroom): useful for *homeowners* looking to renovate and increase the value of their house. 
-e.g., build a second storey with a bathroom
-
-- Renovation choice: $405\ \text{sq ft} \approx 1\ \text{bathroom}$
+- Renovation choice: $350\ \text{sq ft} \approx 1\ \text{bathroom} \approx \text{Hot air heating}$
 - Average bathroom size in the US: 40-100 square feet
 - Practical considerations: construction costs etc.
 
 <img src="https://bathtrendsusa.com/cdn/shop/files/24.jpg?v=1721336556&width=2800" style="width:70%; display:block; margin:0 auto;">
 
 
-## Key Takeaways - immutable
-**Immutable attributes** (land value, waterfront): useful for *prospective buyers/sellers*. 
+## Key Takeaways - Immutable attributes
+Useful for *prospective buyers/sellers*. 
 
 - Waterfront is associated the highest increase in housing price
 
@@ -500,6 +511,7 @@ e.g., build a second storey with a bathroom
 - Homeowners: don't be complacent if you have a nice waterfront
 
 <img src="https://phinneydesign.com/wp-content/uploads/2020/05/550Waterfront-200831-28_edit-scaled.jpg" style="width:70%; display:block; margin:0 auto;">
+
 
 
 ## Limitations and Future Work
