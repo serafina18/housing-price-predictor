@@ -9,7 +9,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-data <- read.delim("housing_prices.txt", header = TRUE, sep = "\t", quote = "", comment.char = "", check.names = TRUE)
+data <- read.delim("housing-prices-ge19.txt", header = TRUE, sep = "\t", quote = "", comment.char = "", check.names = TRUE)
 ```
 
 
@@ -144,9 +144,9 @@ comparison <- data.frame(
 )
 
 comparison
-#Result: all selection methods use (forward, back, both) produced the same results within unchangable and changeable variables. 
+#Result: all selection methods use (forward, back, both) produced the same results within unchangeable and changeable variables. 
 #About 38% of the variation of house prices is explained by factors that are unchangeable (R2 = 0.38)
-#About 55% of the varation of house prices is exaplained by factors that are changeable (R2 = 0.55)
+#About 55% of the variation of house prices is explained by factors that are changeable (R2 = 0.55)
 
 ```
 

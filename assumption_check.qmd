@@ -1,0 +1,283 @@
+---
+title: "assumption_check"
+author: Anne Do - SID 541023382
+format: 
+  html:
+    embed-resources: true
+    toc: true
+    code-fold: true
+---
+
+```{r}
+#| message: false
+#| warning: false
+library(tidyverse)
+library(janitor)
+library(plotly)
+library(ggfortify)
+library(GGally)
+library(gridExtra)
+theme_set(theme_bw())
+```
+
+### Loading the dataset
+
+```{r}
+df = read.delim("housing-prices-ge19.txt")
+```
+
+### Data cleaning
+```{r}
+df <- df %>% select(-Test)
+df <- df %>%
+  mutate(
+    Waterfront = as.factor(Waterfront),
+    New.Construct = as.factor(New.Construct),
+    Central.Air = as.factor(Central.Air),
+    Fuel.Type = as.factor(Fuel.Type),
+    Heat.Type = as.factor(Heat.Type),
+    Sewer.Type = as.factor(Sewer.Type)
+  )
+df <- df %>%
+  #Remove houses with invalid lot size
+  filter(Lot.Size > 0) %>%
+  #Remove old houses that has an age 0
+  filter(!(Age == 0 & New.Construct == 0))
+
+df <- df %>% clean_names()
+```
+
+```{r}
+# cont_vars0 <- c("lot_size", "age", "land_value", "living_area", "pct_college")
+categorical_vars <- c("waterfront", "new_construct", "central_air", "fuel_type", "heat_type", "sewer_type")
+```
+
+
+```{r, message = FALSE}
+cont_vars <- df %>% select(price, lot_size, age, land_value, living_area, pct_college)
+ggpairs(cont_vars) + theme_bw()
+
+cont_vars1 <- df %>% select(lprice, lot_size, age, land_value, living_area, pct_college)
+ggpairs(cont_vars1) + theme_bw()
+
+cont_vars2 <- df %>% select(sprice, lot_size, age, land_value, living_area, pct_college)
+ggpairs(cont_vars2) + theme_bw()
+```
+
+```{r}
+for (i in 2:ncol(df)) {
+  var_name <- names(df)[i]
+  
+  if (var_name %in% categorical_vars){
+    next
+  }
+  
+  # Construct formula properly
+  formula_i <- as.formula(paste("price ~", var_name))
+  
+  # Fit model
+  lm_i <- lm(formula_i, data = df)
+  
+  # Print which variable is being plotted
+  cat("Plotting for variable:", var_name, "\n")
+  
+  # Plot diagnostics
+  print(autoplot(lm_i, which = 1:2))
+}
+
+```
+QQ-Plots don't look linear!
+
+```{r}
+df <- df %>% mutate(lprice = log(price))
+for (i in 2:(ncol(df)-1)) {
+  var_name <- names(df)[i]
+  
+  if (var_name %in% categorical_vars){
+    next
+  }
+  
+  # Construct formula properly
+  formula_i <- as.formula(paste("lprice ~", var_name))
+  
+  # Fit model
+  lm_i <- lm(formula_i, data = df)
+  
+  # Print which variable is being plotted
+  cat("Plotting for variable:", var_name, "\n")
+  
+  # Plot diagnostics
+  print(autoplot(lm_i, which = 1:2))
+}
+```
+
+```{r}
+df <- df %>% mutate(sprice = sqrt(price))
+for (i in 2:(ncol(df)-2)) {
+  var_name <- names(df)[i]
+  
+  if (var_name %in% categorical_vars){
+    next
+  }
+  
+  # Construct formula properly
+  formula_i <- as.formula(paste("sprice ~", var_name))
+  
+  # Fit model
+  lm_i <- lm(formula_i, data = df)
+  
+  # Print which variable is being plotted
+  cat("Plotting for variable:", var_name, "\n")
+  
+  # Plot diagnostics
+  print(autoplot(lm_i, which = 1:2))
+}
+```
+
+```{r}
+p1 = df |> ggplot() + 
+  aes(x = lot_size, y = price) + 
+  geom_point(size = 3) + 
+  labs(x = "Lot size",
+       y = "House price") +
+  geom_smooth(method="lm", se=FALSE)
+p1
+p1 + scale_y_log10()
+
+p1 + scale_x_log10()
+
+p1 + scale_x_log10() + scale_y_log10()
+
+ggplot(df, aes(x = lot_size)) + geom_boxplot()
+ggplot(df, aes(x = lot_size)) + geom_histogram()
+```
+
+```{r}
+p1 = df |> ggplot() + 
+  aes(x = age, y = price) + 
+  geom_point(size = 3) + 
+  labs(x = "Lot size",
+       y = "House price") +
+  geom_smooth(method="lm", se=FALSE)
+p1
+p1 + scale_y_log10()
+
+p1 + scale_x_log10()
+
+p1 + scale_x_log10() + scale_y_log10()
+ggplot(df, aes(x = age)) + geom_histogram()
+ggplot(df, aes(x = age)) + geom_boxplot()
+```
+
+```{r}
+p1 = df |> ggplot() + 
+  aes(x = land_value, y = price) + 
+  geom_point(size = 3) + 
+  labs(x = "Lot size",
+       y = "House price") +
+  geom_smooth(method="lm", se=FALSE)
+p1
+p1 + scale_y_log10()
+
+p1 + scale_x_log10()
+
+p1 + scale_x_log10() + scale_y_log10()
+
+
+ggplot(df, aes(x = land_value)) + geom_histogram()
+```
+
+```{r}
+# Linear with/ without transformation
+p1 = df |> ggplot() + 
+  aes(x = living_area, y = price) + 
+  geom_point(size = 3) + 
+  labs(x = "Lot size",
+       y = "House price") +
+  geom_smooth(method="lm", se=FALSE)
+p1
+p1 + scale_y_log10()
+
+p1 + scale_x_log10()
+
+p1 + scale_x_log10() + scale_y_log10()
+```
+
+```{r}
+# Looks better with log(price)
+p1 = df |> ggplot() + 
+  aes(x = pct_college, y = price) + 
+  geom_point(size = 3) + 
+  labs(x = "Lot size",
+       y = "House price") +
+  geom_smooth(method="lm", se=FALSE)
+p1
+p1 + scale_y_log10()
+
+p1 + scale_x_log10()
+
+p1 + scale_x_log10() + scale_y_log10()
+```
+
+```{r}
+# Better with log(price)
+p1 = df |> ggplot() + 
+  aes(x = bedrooms, y = price) + 
+  geom_point(size = 3) + 
+  labs(x = "Lot size",
+       y = "House price") +
+  geom_smooth(method="lm", se=FALSE)
+p1
+p1 + scale_y_log10()
+
+p1 + scale_x_log10()
+
+p1 + scale_x_log10() + scale_y_log10()
+```
+
+```{r}
+# Better with log(price)
+p1 = df |> ggplot() + 
+  aes(x = fireplaces, y = price) + 
+  geom_point(size = 3) + 
+  labs(x = "Lot size",
+       y = "House price") +
+  geom_smooth(method="lm", se=FALSE)
+p1
+p1 + scale_y_log10()
+
+p1 + scale_x_log10()
+
+p1 + scale_x_log10() + scale_y_log10()
+```
+
+```{r}
+p1 = df |> ggplot() + 
+  aes(x = bathrooms, y = price) + 
+  geom_point(size = 3) + 
+  labs(x = "Lot size",
+       y = "House price") +
+  geom_smooth(method="lm", se=FALSE)
+p1
+p1 + scale_y_log10()
+
+p1 + scale_x_log10()
+
+p1 + scale_x_log10() + scale_y_log10()
+```
+
+```{r}
+p1 = df |> ggplot() + 
+  aes(x = rooms, y = price) + 
+  geom_point(size = 3) + 
+  labs(x = "Lot size",
+       y = "House price") +
+  geom_smooth(method="lm", se=FALSE)
+p1
+p1 + scale_y_log10()
+
+p1 + scale_x_log10()
+
+p1 + scale_x_log10() + scale_y_log10()
+```
+

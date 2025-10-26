@@ -17,6 +17,7 @@ library(ggplot2)
 library(scales)
 library(knitr)
 library(kableExtra)
+library(ggfortify)
 
 
 # Data load
@@ -46,25 +47,33 @@ data_cleaned <- data %>%
   filter(Lot.Size > 0) %>%
   filter(!(Age == 0 & New.Construct == 0))
 
+data_cleaned <- data_cleaned %>%
+  mutate(
+    Log.Price = log(Price),
+    Log.Lot.Size = log(Lot.Size),
+    Log.Age = ifelse(Age != 0, log(Age), 0),
+    Log.Land.Value = log(Land.Value)
+  )
+
 # Groupings
-unchangeable_vars <- c("Lot.Size", "Waterfront", "Age", "Land.Value")
+unchangeable_vars <- c("Log.Lot.Size", "Waterfront", "Log.Age", "Log.Land.Value")
 changeable_vars   <- c("Living.Area", "Bathrooms", "Bedrooms", "Rooms",
                        "Central.Air", "New.Construct", "Heat.Type",
                        "Fuel.Type", "Fireplaces")
 
-data_U <- data_cleaned[, c("Price", unchangeable_vars)]
-data_C <- data_cleaned[, c("Price", changeable_vars)]
+data_U <- data_cleaned[, c("Log.Price", unchangeable_vars)]
+data_C <- data_cleaned[, c("Log.Price", changeable_vars)]
 
 # --- Unchangeable models ---
-m0_U <- lm(Price ~ 1, data = data_U)
-m1_U <- lm(Price ~ ., data = data_U)
+m0_U <- lm(Log.Price ~ 1, data = data_U)
+m1_U <- lm(Log.Price ~ ., data = data_U)
 step_fwd_U  <- step(m0_U, scope = list(lower = m0_U, upper = m1_U), direction = "forward", trace = FALSE)
 step_back_U <- step(m1_U, direction = "backward", trace = FALSE)
 step_both_U <- step(m0_U, scope = list(lower = m0_U, upper = m1_U), direction = "both",    trace = FALSE)
 
 # --- Changeable models ---
-m0_C <- lm(Price ~ 1, data = data_C)
-m1_C <- lm(Price ~ ., data = data_C)
+m0_C <- lm(Log.Price ~ 1, data = data_C)
+m1_C <- lm(Log.Price ~ ., data = data_C)
 step_fwd_C  <- step(m0_C, scope = list(lower = m0_C, upper = m1_C), direction = "forward", trace = FALSE)
 step_back_C <- step(m1_C, direction = "backward", trace = FALSE)
 step_both_C <- step(m0_C, scope = list(lower = m0_C, upper = m1_C), direction = "both",    trace = FALSE)
@@ -117,36 +126,26 @@ res_df <- data.frame(
 
 -   There are no missing values in the data
 
--   Unchangeable factors: lot size, age, waterfront, land value
+-   Saratoga County, New York State, 2006
 
--   Changeable factors: living area, bedrooms, bathrooms, central air, etc
+- Collected for a case study: "How much is a Fireplace Worth?"
+
+
 
 :::
 
-:::{.column height = }
+:::{.column}
 Column | Unit | Notes
------|-----:
-Price	| $USD | -
+-----|----- | ----- 
 Lot.Size	| Acres | -
-Waterfront	| Boolean | -
-Age	| Years | -
-Land.Value	| $USD | -
-New.Construct	| Boolean | -
-Central.Air	| Boolean | -
-Fuel.Type	|  | -
-Heat.Type	|  | -
-Sewer.Type	| Public/Private | -
 Living.Area	| sq^2 | -
-Pct.College	| % | Percentage College Education
-Bedrooms	| N/A | -
-Fireplaces	| N/A | -
-Bathrooms	| N/A | -
-Rooms	| N/A | -
-Test| N/A | -
-
+Pct.College	| % | % of Neighborhood with College Education
+Test| N/A | Random
 :::
 
 ::::
+
+![](Saratoga+county-780987416.jpg)
 
 ## Data Cleaning
 
@@ -230,12 +229,28 @@ Adj_R2 = c(summary(step_fwd_C)$adj.r.squared, summary(step_back_C)$adj.r.squared
 ```
 
 ## Assumption Check - Linearity
+```{r}
+autoplot(final_model, which = 1:2)
+```
+
 
 ## Assumption Check - Homoscedasticity
 
 ## Assumption Check - Normality
 
 ## Assumption Check - Multicollinearity
+```{r}
+categorical_vars <- c("waterfront", "new_construct", "central_air", "fuel_type", "heat_type", "sewer_type")
+numeric_data <- data_cleaned[, !(names(data_cleaned) %in% categorical_vars)]
+cor_mat = cor(numeric_data)
+melted_cor_mat = cor_mat |>
+  data.frame() |> 
+  rownames_to_column(var = "var1") |> 
+  pivot_longer(cols = -var1, 
+               names_to = "var2",
+               values_to = "cor")
+```
+
 
 ## Discussion: Coefficients
 If living area *increases* by 1 square foot, the housing price is expected to *increase* by **USD$68.19**. 

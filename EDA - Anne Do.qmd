@@ -96,7 +96,9 @@ Included in EDA submission
 
 #### [Price vs Living Area/ Bedroom]{.underline}
 
-```{r} p1 <- ggplot(df, aes(x=Living.Area, y = Price)) +        geom_point() +        labs(x = "Living.Area (square feet)",             y = "Price (USD)") +   scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) +   scale_y_continuous(labels = function(x) format(x, scientific = FALSE))  df$Bedroom.Living.Area = df$Living.Area / df$Bedrooms p2 <- ggplot(df, aes(x = Bedroom.Living.Area, y = Price)) +   geom_point() +   labs(x = "Living.Area.Per.Bedroom (square feet)",             y = "Price (USD)") +   scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) +   scale_y_continuous(labels = function(x) format(x, scientific = FALSE))  grid.arrange(p1, p2, ncol=2)}
+```{r} 
+p1 <- ggplot(df, aes(x=Living.Area, y = Price)) +        geom_point() +        labs(x = "Living.Area (square feet)",             y = "Price (USD)") +   scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) +   scale_y_continuous(labels = function(x) format(x, scientific = FALSE))  df$Bedroom.Living.Area = df$Living.Area / df$Bedrooms 
+p2 <- ggplot(df, aes(x = Bedroom.Living.Area, y = Price)) +   geom_point() +   labs(x = "Living.Area.Per.Bedroom (square feet)",             y = "Price (USD)") +   scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) +   scale_y_continuous(labels = function(x) format(x, scientific = FALSE))  grid.arrange(p1, p2, ncol=2)
 ```
 
 The lot size seems to be pretty left-skewed?
