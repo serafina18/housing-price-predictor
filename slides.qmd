@@ -121,6 +121,8 @@ res_df <- data.frame(
 
 - Collected for a case study: "How much is a Fireplace Worth?"
 
+
+
 :::
 
 :::{.column}
@@ -128,12 +130,13 @@ Column | Unit | Notes
 -----|----- | ----- 
 Lot.Size	| Acres | -
 Living.Area	| sq^2 | -
-Pct.College	| % | Percentage College Education
+Pct.College	| % | % of Neighborhood with College Education
 Test| N/A | Random
-
 :::
 
 ::::
+
+![](Saratoga+county-780987416.jpg)
 
 ## Data Cleaning
 
