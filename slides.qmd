@@ -143,13 +143,13 @@ Test| N/A | Random
 4.  Log transformation for variables with skewed data: Price, Lot Size, Age, Land Value
 
 ## Variable Groupings - Changeable and Unchangeable
-
+- 38% of the variation of house prices is explained by factors that are unchangeable (R2 = 0.38)
+- 55% are of changeable factors. (R2 = 0.55)
 ```{r}
-
-unchangeable <- c("Lot.Size", "Waterfront", "Age", "Land.Value")
+unchangeable <- c("Lot.Size", "Waterfront", "Age", "Land.Value", "Pct.College")
 changeable   <- c("Living.Area", "Bathrooms", "Bedrooms", "Rooms",
                   "Central.Air", "New.Construct", "Heat.Type",
-                  "Fuel.Type", "Fireplaces")
+                  "Fuel.Type", "Fireplaces", "Sewer.Type")
 
 pad <- function(x, n) c(x, rep("", n - length(x)))
 n <- max(length(unchangeable), length(changeable))
@@ -161,8 +161,11 @@ vars_side <- data.frame(
 )
 
 kable(vars_side, "html", align = "l") %>%
-  kable_styling(full_width = FALSE, position = "center")
+  kable_styling(full_width = FALSE, position = "center") %>%
+  kableExtra::scroll_box(width = "60%", height = "300px")
+
 ```
+
 
 ## Variable Selection Approach - Stepwise
 
@@ -172,38 +175,52 @@ kable(vars_side, "html", align = "l") %>%
 
 -   Each approach adds or removes variables based on the **Akaike Information Criterion (AIC)**.
 
-## Stepwise Results
+
+## Stepwise Results {.slide-compact}
+
 
 ```{r}
+library(broom)
+library(dplyr)
+library(kableExtra)
 
-results_tbl <- data.frame(
-  Model = c("Forward", "Backward", "Stepwise"),
-  R2 = c(summary(step_fwd_full)$r.squared,
-         summary(step_back_full)$r.squared,
-         summary(step_both_full)$r.squared),
-  Adj_R2 = c(summary(step_fwd_full)$adj.r.squared,
-             summary(step_back_full)$adj.r.squared,
-             summary(step_both_full)$adj.r.squared),
-  AIC = c(AIC(step_fwd_full),
-          AIC(step_back_full),
-          AIC(step_both_full))
+# Summaries (you already have these objects)
+sum_fwd  <- glance(step_fwd_full)
+sum_back <- glance(step_back_full)
+sum_both <- glance(step_both_full)
+
+step_tbl <- bind_rows(
+  tibble(Model = "Forward",   R2 = sum_fwd$r.squared,  Adj_R2 = sum_fwd$adj.r.squared,  AIC = sum_fwd$AIC),
+  tibble(Model = "Backward",  R2 = sum_back$r.squared, Adj_R2 = sum_back$adj.r.squared, AIC = sum_back$AIC),
+  tibble(Model = "Stepwise",  R2 = sum_both$r.squared, Adj_R2 = sum_both$adj.r.squared, AIC = sum_both$AIC)
 )
 
-options(knitr.kable.NA = "", kableExtra.latex.options = "scale_down")
-
-kable(results_tbl,
-      caption = "Forward, Backward, and Stepwise Selection Summary (Full Model)",
-      col.names = c("Model", "R²", "Adjusted R²", "AIC"),
-      align = "lccc") |>
-  kable_classic(full_width = FALSE)
-
+step_tbl %>%
+  mutate(
+    R2 = round(R2, 3),
+    Adj_R2 = round(Adj_R2, 3),
+    AIC = round(AIC, 1)
+  ) %>%
+  kable("html", caption = "Forward, Backward, and Stepwise (Full Model)",
+        align = "lccc") %>%
+  kable_styling(full_width = FALSE, position = "left") %>%
+  column_spec(1, bold = TRUE) %>%
+  column_spec(2:4, width = "3.2cm")
 ```
+
+**Final Model (Backward Selection)**  
+
+Housing.Price ~  
+Waterfront + New.Construct + Central.Air + Fuel.Type +  
+Living.Area + Pct.College + Bathrooms + Rooms +  
+Log.Lot.Size + Log.Age + Log.Land.Value
+
 
 
 ## Model Evaluation: In-Sample Performance Test
 
 - The Living Area model is the most best among the single-predictor models.  
-- The full model achieves a higher R² (around 0.63), indicating a better overall fit.  
+- The full model achieves a higher R² (around 0.59), indicating a better overall fit.  
 
 ```{r}
 # Living.Area
@@ -244,7 +261,7 @@ models <- list(
 )
 
 # model_names <- c("Living Area", "Bathrooms", "Land Value", "Waterfront", "Fuel Type", "Age", "New Construct", "Central Air", "Full Model", "Changable Variables", "Unchagable Variables")
-model_names <- c("Living Area", "Bathrooms", "Full Model", "Changable Variables", "Unchagable Variables")
+model_names <- c("Living Area", "Bathrooms", "Full Model", "Changeable Variables", "Unchangeable Variables")
 
 in_sample_tbl <- tibble(
   Model = model_names,
@@ -375,13 +392,6 @@ results_tbl |>
   kable_classic(full_width = FALSE)
 ```
 
-## Final Chosen Model
-
-```{r}
-
-summary(step_back_full)
-
-```
 
 ## Assumption Check - Linearity
 ```{r, message=FALSE, warning=FALSE}
