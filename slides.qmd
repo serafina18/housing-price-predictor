@@ -418,6 +418,10 @@ results_tbl |>
   kable(col.names = c("Model", "RMSE", "MAE"), align = "lcc") |>
   kable_classic(full_width = FALSE)
 ```
+## K-fold Cross Validation
+
+
+## Model Stability and Variable Inclusion
 
 
 ## Assumption Check - Linearity
@@ -551,24 +555,33 @@ Useful for *prospective buyers/sellers*.
 
 
 
-## Limitations and Future Work
+## Limitations
 :::: {.columns}
 ::: {.column width="40%"}
 #### Representativeness 
 - 2006, GFC
 - Saratoga ≠ NYC: suburban ≠ urban
 
-#### Unrecorded variables
+Unrecorded variables
 
-#### Risk of overfitting
+Risk of overfitting
 
-#### Future work
+:::
+::: {.column width="60%"}
+<img src="https://lh3.googleusercontent.com/proxy/XMJ6hvlvaUW5ogMkMWKEoj7q42L4P8Z2MCYOvtkOROAYGaSDgxX0G1qIRDyGYK-PP0XoGNa9cU7246N9KyhhXIm4CO3WRcTu_Rc" style="width:100%; display:block; margin:0 auto;">
+:::
+::::
+
+
+## Future Work
+:::: {.columns}
+::: {.column width="40%"}
 - More recent / time series
 - More variables
 - Interactive geographic visualisations 
 
 :::
 ::: {.column width="60%"}
-<img src="https://lh3.googleusercontent.com/proxy/XMJ6hvlvaUW5ogMkMWKEoj7q42L4P8Z2MCYOvtkOROAYGaSDgxX0G1qIRDyGYK-PP0XoGNa9cU7246N9KyhhXIm4CO3WRcTu_Rc" style="width:100%; display:block; margin:0 auto;">
+<img src="https://cdn.britannica.com/54/18654-004-EB657F21/Locator-map-Saratoga-County-New-York.jpg" style="width:100%; display:block; margin:0 auto;">
 :::
 ::::
