@@ -95,13 +95,16 @@ step_both_full <- step(
 
 
 ## Approach
+- Problem Statement:
+**To what extent do immutable property characteristics, compared to changeable attributes, explain housing price variation?**
 - Through who's lens should we view the data?
 - Perspectives: 
-  - A homeowner considering renovations to their house to improve their property value (maybe before selling) or 
-  - A property developer that, already having access to some piece of land is considering what type of houses to build on it
-- Expanding on to that, how much of the price of the house is dependent on things that are changeable? To what extent can the developer or homeowner actually increase their returns having already acquired land or a pre-built property.
-- To what extent do immutable property characteristics, compared to changeable attributes, explain housing price variation?
+  - A homeowner considering possible renovations
+  - A buyer looking to make an informed decision
+- What can the homeowner do to improve price of their house?
+- How much attention should buyer show towards "unchageable" characteristics? A chance of underevaluation?
 
+![](Homeowner.jpg)
 
 
 ## Dataset Overview - Saratoga Housing Data
@@ -420,6 +423,14 @@ results_tbl |>
 ```
 
 
+## Final Chosen Model
+
+```{r}
+
+summary(step_back_full)
+
+```
+
 ## Assumption Check - Linearity
 ```{r, message=FALSE, warning=FALSE}
 
@@ -440,7 +451,7 @@ plots <- lapply(vars, function(v){
 # Arrange them nicely: 2 columns
 combined <- wrap_plots(plots, ncol = 2)
 combined
-
+  
 ```
 The residuals are relatively randomly scattered around the zero lines. Hence, the linearity assumption is satisfied.
 
