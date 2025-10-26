@@ -1621,6 +1621,44 @@ F-statistic: 161.9 on 15 and 1668 DF,  p-value: &lt; 2.2e-16</code></pre>
 </section>
 <section id="final-chosen-model" class="slide level2">
 <h2>Final Chosen Model</h2>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = Log.Price ~ Waterfront + New.Construct + Central.Air + 
+    Fuel.Type + Living.Area + Pct.College + Bathrooms + Rooms + 
+    Log.Lot.Size + Log.Age + Log.Land.Value, data = data_cleaned)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-3.8659 -0.1528  0.0075  0.1680  1.4423 
+
+Coefficients:
+                 Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)     1.038e+01  8.296e-02 125.091  &lt; 2e-16 ***
+Waterfront1     5.656e-01  8.233e-02   6.869 9.09e-12 ***
+New.Construct1 -2.460e-01  4.260e-02  -5.775 9.15e-09 ***
+Central.Air1    5.662e-02  1.668e-02   3.395 0.000703 ***
+Fuel.TypeGas    8.302e-02  1.954e-02   4.250 2.26e-05 ***
+Fuel.TypeNone  -3.314e-01  1.474e-01  -2.249 0.024655 *  
+Fuel.TypeOil    5.384e-02  2.749e-02   1.959 0.050289 .  
+Fuel.TypeSolar  1.068e-03  2.919e-01   0.004 0.997080    
+Fuel.TypeWood  -1.025e+00  2.925e-01  -3.505 0.000469 ***
+Living.Area     2.854e-04  2.194e-05  13.008  &lt; 2e-16 ***
+Pct.College    -1.617e-03  8.224e-04  -1.966 0.049468 *  
+Bathrooms       9.753e-02  1.677e-02   5.817 7.16e-09 ***
+Rooms           8.877e-03  4.560e-03   1.947 0.051757 .  
+Log.Lot.Size    2.656e-02  8.505e-03   3.123 0.001824 ** 
+Log.Age        -5.219e-02  9.153e-03  -5.702 1.40e-08 ***
+Log.Land.Value  1.231e-01  8.645e-03  14.233  &lt; 2e-16 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Residual standard error: 0.2906 on 1668 degrees of freedom
+Multiple R-squared:  0.5929,    Adjusted R-squared:  0.5892 
+F-statistic: 161.9 on 15 and 1668 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+</div>
 </section>
 <section id="assumption-check---linearity" class="slide level2">
 <h2>Assumption Check - Linearity</h2>
