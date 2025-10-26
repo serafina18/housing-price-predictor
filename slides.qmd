@@ -11,7 +11,7 @@ format:
 
 ```{r}
 # Libraries
-library(dplyr)
+library(tidyverse)
 library(ggplot2)
 library(scales)
 library(knitr)
@@ -68,7 +68,7 @@ step_fwd_full <- step(
   direction = "forward",
   trace = FALSE
 )
-summary(step_fwd_full)
+#summary(step_fwd_full)
 
 #Backward
 step_back_full <- step(
@@ -76,7 +76,7 @@ step_back_full <- step(
   direction = "backward",
   trace = FALSE
 )
-summary(step_back_full)
+#summary(step_back_full)
 
 #Stepwise
 step_both_full <- step(
@@ -85,7 +85,7 @@ step_both_full <- step(
   direction = "both",
   trace = FALSE
 )
-summary(step_both_full)
+#summary(step_both_full)
 
 # AIC(step_fwd_full)
 # AIC(step_back_full)
