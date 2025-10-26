@@ -218,6 +218,10 @@ New.Construct_lm  <- lm(Log.Price ~ New.Construct, data = data_cleaned)
 
 lm_full_lm     <- lm(Log.Price ~ Living.Area + Log.Land.Value + Bathrooms + Waterfront + Heat.Type + Log.Age + New.Construct, data = data_cleaned)
 
+changable_lm     <- lm(Log.Price ~ Living.Area + Bathrooms + Heat.Type + New.Construct, data = data_cleaned)
+
+unchangable_lm     <- lm(Log.Price ~ Log.Land.Value + Waterfront +  Log.Age, data = data_cleaned)
+
 models <- list(
   Living.Area_lm,
   Bathrooms_lm,
@@ -226,10 +230,12 @@ models <- list(
   Heat.Type_lm,
   Age_lm,
   New.Construct_lm,
-  lm_full_lm
+  lm_full_lm,
+  changable_lm,
+  unchangable_lm
 )
 
-model_names <- c("Living Area", "Bathrooms", "Land Value", "Waterfront", "Heat Type", "Age", "New Construct", "Full Model")
+model_names <- c("Living Area", "Bathrooms", "Land Value", "Waterfront", "Heat Type", "Age", "New Construct", "Full Model", "Changable Variables", "Unchagable Variables")
 
 in_sample_tbl <- tibble(
   Model = model_names,
@@ -253,6 +259,13 @@ in_sample_tbl |>
 - This indicates that housing price is influenced by multiple property characteristics rather than any single factor.
 
 ```{r}
+# Living.Area
+# Log.Land.Value
+# Bathrooms
+# Waterfront
+# Heat.Type
+# Log.Age
+# New.Construct
 
 set.seed(5)
 n = nrow(data_cleaned)
@@ -322,6 +335,8 @@ results_tbl |>
 ## Final Chosen Model
 
 ```{r}
+
+
 
 ```
 
