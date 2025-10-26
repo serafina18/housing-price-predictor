@@ -1730,6 +1730,6 @@ Price	Lot.Size	Waterfront	Age	Land.Value	New.Construct	Central.Air	Fuel.Type	Hea
 25532	0.13	0	125	700	0	0	Wood	None	Private	816	44	2	0	1	4	1
 134700	0.17	0	93	55800	0	0	None	None	Public	1002	57	2	0	1	4	0
 127100	0.1	0	124	49500	0	0	Solar	None	Public	934	57	2	0	1.5	4	0
-93125	0.16	0	59	32000	0	0	Unknown/Other	None	Private	1152	63	3	0	2	5	0
+93125	0.16	0	59	32000	0	0	None	None	Private	1152	63	3	0	2	5	0
 80100	1.29	0	183	16500	0	0	None	None	Private	1280	57	3	0	2	5	0
 80100	1.29	0	183	16500	0	0	None	None	Private	1280	57	2	0	1	4	0
