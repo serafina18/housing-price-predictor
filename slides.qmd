@@ -241,9 +241,8 @@ step_tbl %>%
 **Final Model (Backward Selection)**  
 
 Housing.Price ~  
-Waterfront + New.Construct + Central.Air + Fuel.Type +  
-Living.Area + Pct.College + Bathrooms + Rooms +  
-Log.Lot.Size + Log.Age + Log.Land.Value
+Waterfront + New.Construct + Central.Air + Fuel.Type.Gas +  
+Fuel.Type.Wood + Living.Area + Bathrooms + Log.Age + Log.Land.Value
 
 
 
@@ -423,8 +422,83 @@ results_tbl |>
 ```
 ## K-fold Cross Validation
 
+```{r}
+library(caret)
+
+cv_Living.Area = train(
+  Log.Price ~ Living.Area,
+  data_cleaned,
+  method = "lm",
+  trControl = trainControl(
+    method = "cv", number = 10,
+    verboseIter = FALSE
+  )
+)
+cv_Bathrooms = train(
+  Log.Price ~ Bathrooms,
+  data_cleaned,
+  method = "lm",
+  trControl = trainControl(
+    method = "cv", number = 10,
+    verboseIter = FALSE
+  )
+)
+# cv_Living.Area
+# cv_Bathrooms
+
+cv_full = train(
+  Log.Price ~ Living.Area + Bathrooms + Log.Land.Value + Waterfront + Fuel.Type + Log.Age + New.Construct + Central.Air, data_cleaned,
+  method = "lm",
+  trControl = trainControl(
+    method = "cv", number = 10,
+    verboseIter = FALSE
+  )
+)
+# cv_full
+cv_changable = train(
+  Log.Price ~ Living.Area + Bathrooms + Fuel.Type + New.Construct + Central.Air, data_cleaned,
+  method = "lm",
+  trControl = trainControl(
+    method = "cv", number = 10,
+    verboseIter = FALSE
+  )
+)
+cv_unchangable = train(
+  Log.Price ~ Log.Land.Value + Waterfront + Log.Age, data_cleaned,
+  method = "lm",
+  trControl = trainControl(
+    method = "cv", number = 10,
+    verboseIter = FALSE
+  )
+)
+# cv_unchangable
+
+results_tbl <- tibble(
+    Model = c("Living Area", "Bathrooms", "Full Model", "Changable Variables", "Unchagable Variables"),
+  RMSE = c(0.327, 0.365, 0.322, 0.319, 0.369),
+  MAE = c(0.478, 0.267, 0.228, 0.225, 0.273),
+  R_Squared = c(0.478, 0.353, 0.494, 0.510, 0.339)
+)
+
+results_tbl |>
+  mutate(across(where(is.numeric), round, 3)) |>
+  kable(col.names = c("Model", "RMSE", "MAE", "R_Squared"), align = "lcc") |>
+  kable_classic(full_width = FALSE)
+```
+
 
 ## Model Stability and Variable Inclusion
+```{r}
+library(mplot)
+load("modelStab.RData")
+
+{r, fig.width=12, fig.height=3.5}
+plot(vis.d.int, which = "vip", interactive = FALSE)
+
+
+{r, fig.width=12, fig.height=3.5}
+plot(vis.d.int, which = "boot", interactive = FALSE)
+```
 
 
 ## Final Chosen Model
