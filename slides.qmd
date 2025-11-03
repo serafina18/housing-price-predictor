@@ -190,9 +190,9 @@ vars_side <- data.frame(
   check.names = FALSE
 )
 
+
 kable(vars_side, "html", align = "l") %>%
-  kable_styling(full_width = FALSE, position = "center") %>%
-  kableExtra::scroll_box(width = "60%", height = "300px")
+  kable_styling(full_width = FALSE, position = "center", font_size = 12)
 
 ```
 
@@ -238,7 +238,7 @@ step_tbl %>%
   column_spec(2:4, width = "3.2cm")
 ```
 
-**Final Model (Backward Selection)**  
+**Final Model (Backward/Stepwise Selection)**  
 
 Housing.Price ~  
 Waterfront + New.Construct + Central.Air + Fuel.Type.Gas +  
@@ -249,7 +249,7 @@ Fuel.Type.Wood + Living.Area + Bathrooms + Log.Age + Log.Land.Value
 ## Model Evaluation: In-Sample Performance Test
 
 - The Living Area model is the most best among the single-predictor models.  
-- The full model achieves a higher R² (around 0.59), indicating a better overall fit.  
+- The selected model achieves a higher R² (around 0.59), indicating a better overall fit.  
 
 ```{r}
 # Living.Area
@@ -289,8 +289,8 @@ models <- list(
   unchangable_lm
 )
 
-# model_names <- c("Living Area", "Bathrooms", "Land Value", "Waterfront", "Fuel Type", "Age", "New Construct", "Central Air", "Full Model", "Changable Variables", "Unchagable Variables")
-model_names <- c("Living Area", "Bathrooms", "Full Model", "Changeable Variables", "Unchangeable Variables")
+# model_names <- c("Living Area", "Bathrooms", "Land Value", "Waterfront", "Fuel Type", "Age", "New Construct", "Central Air", "Selected Model", "Changable Variables", "Unchagable Variables")
+model_names <- c("Living Area", "Bathrooms", "Selected Model", "Changeable Variables", "Unchangeable Variables")
 
 in_sample_tbl <- tibble(
   Model = model_names,
@@ -388,7 +388,7 @@ unchangable_mae = mean(abs(test_dat$Log.Price - unchangable_pred))
 
 results_tbl <- tibble(
   # Model = c("Living Area", "Bathrooms", "Land Value", "Waterfront", "Fuel Type", "Age", "New Construct", "Central.Air", "Full Model", "Changable Variables", "Unchagable Variables"),
-    Model = c("Living Area", "Bathrooms", "Full Model", "Changable Variables", "Unchagable Variables"),
+    Model = c("Living Area", "Bathrooms", "Selected Model", "Changable Variables", "Unchagable Variables"),
   RMSE = c(sqrt(Living.Area_mse),
            sqrt(Bathrooms_mse),
            # sqrt(Log.Land.Value_mse),
@@ -474,7 +474,7 @@ cv_unchangable = train(
 # cv_unchangable
 
 results_tbl <- tibble(
-    Model = c("Living Area", "Bathrooms", "Full Model", "Changable Variables", "Unchagable Variables"),
+    Model = c("Living Area", "Bathrooms", "Selected Model", "Changable Variables", "Unchagable Variables"),
   RMSE = c(0.327, 0.365, 0.322, 0.319, 0.369),
   MAE = c(0.478, 0.267, 0.228, 0.225, 0.273),
   R_Squared = c(0.478, 0.353, 0.494, 0.510, 0.339)
@@ -492,21 +492,14 @@ results_tbl |>
 library(mplot)
 load("modelStab.RData")
 
-{r, fig.width=12, fig.height=3.5}
-plot(vis.d.int, which = "vip", interactive = FALSE)
-
-
-{r, fig.width=12, fig.height=3.5}
-plot(vis.d.int, which = "boot", interactive = FALSE)
 ```
 
+```{r, fig.width=12, fig.height=3.5}
+plot(vis.d.int, which = "vip", interactive = FALSE)
+```
 
-## Final Chosen Model
-
-```{r}
-
-summary(step_back_full)
-
+```{r, fig.width=12, fig.height=3.5}
+plot(vis.d.int, which = "boot", highlight = "Living.Area", interactive = FALSE)
 ```
 
 ## Assumption Check - Linearity
