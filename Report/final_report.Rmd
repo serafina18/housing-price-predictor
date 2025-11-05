@@ -1,0 +1,45 @@
+---
+title: "Executive Summary: What Really Drives House Prices? Comparing Unchangeable and Changeable Factors in New York State"
+author: "Group L91G03 — Anne Do, Arielle Melamed, Serafina Aurelia, Eric Lee, Haresh Kumararajah"
+output:
+  pdf_document:
+    number_sections: false
+    fig_caption: true
+    keep_tex: false
+fontsize: 11pt
+geometry: margin=1in
+# Keep it single-column for readability; 1in margins squeeze enough content without looking cramped.
+header-includes:
+  - \usepackage{microtype}
+  - \usepackage{titlesec}
+  - \titleformat{\section}{\bfseries\large}{\thesection}{0.5em}{}
+  - \titleformat{\subsection}{\bfseries}{\thesubsection}{0.5em}{}
+  - \setlength{\parskip}{0.3em}
+  - \setlength{\parindent}{0pt}
+  - \usepackage[font=small,labelfont=bf]{caption}
+  - \usepackage{etoolbox}
+  - \AtBeginEnvironment{quote}{\small}
+linkcolor: black
+urlcolor: blue
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Abstract
+## Introduction
+
+## Dataset
+The dataset used in this study is the 2006 Saratoga Housing Data, which contains 1,734 observations and 17 variables ranging over various housing characteristics.The data were originally collected to answer the case study question: "How much is a fireplace worth?"
+
+The dependent variable is Price of each house. The data contain no missing values and include the dependent variable, Price, alongside predictor variables such as Lot Size, Living Area, Land Value, Age, Waterfront, New.Construct, Central.Air, Fuel.Type, and others.
+
+## Analysis
+A multiple linear regression model was used to review how property characteristics influence Log(Price). Prior to building our model, basic data cleaning was done to remove invalid and inconsistent entries such as Lot.Size = 0 or Age = 0 with New.Construct = 0. All categorical variables are also encoded into factors. Finally, log transformations were applied to skewed variables (Price, Lot.Size, Age, Land.Value) to stabilize variance and improve normality. 
+
+As part of the initial data exploration, variables were grouped into unchangeable (e.g., Lot.Size, Waterfront, Age, Land.Value, Pct.College) and changeable factors (e.g., Living.Area, Bathrooms, Bedrooms, Central.Air, Fireplaces, New.Construct, Fuel.Type). We performed stepwise selection within each group to assess significance, and found that 38% of the housing price variation is explained by unchangeable factors $(R^2 = 0.38)$ while 55% are of changeable factors $(R^2 = 0.55)$.
+
+The final model-building process used forward, backward, and stepwise selection under AIC. All approaches achieved similar explanatory power (adjusted $R^2 \approx 0.59$). Backward and Stepwise method converged to the same model with a lower AIC of 635.2 compared to Forward with 638.4. This backward/stepwise was therefore chosen as our final model as it offers a slightly stronger explanatory ability without overfitting. It has 9 predictor variables: Waterfront, New.Construct, Central.Air, Fuel.Type.Gas, Fuel.Type.Wood, Living.Area, Bathrooms, Log.Age, Log.Land.Value.
+
