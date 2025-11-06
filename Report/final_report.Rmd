@@ -43,3 +43,7 @@ As part of the initial data exploration, variables were grouped into unchangeabl
 
 The final model-building process used forward, backward, and stepwise selection under AIC. All approaches achieved similar explanatory power (adjusted $R^2 \approx 0.59$). Backward and Stepwise method converged to the same model with a lower AIC of 635.2 compared to Forward with 638.4. This backward/stepwise was therefore chosen as our final model as it offers a slightly stronger explanatory ability without overfitting. It has 9 predictor variables: Waterfront, New.Construct, Central.Air, Fuel.Type.Gas, Fuel.Type.Wood, Living.Area, Bathrooms, Log.Age, Log.Land.Value.
 
+## Results
+
+## Discussion and conclusion
+
