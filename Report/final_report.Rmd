@@ -253,6 +253,10 @@ all_subsets <- all_subsets[order(all_subsets$AIC), ]
 MuMIn.aic <- get.models(all_subsets, 1)[[1]]
 all_subsets <- all_subsets[order(all_subsets$BIC), ]
 MuMIn.bic <- get.models(all_subsets, 1)[[1]]
+
+low_BIC_subsets <- subset(all_subsets, BIC <= BIC(MuMIn.bic)+2)
+low_BIC_subsets <- low_BIC_subsets[order(low_BIC_subsets$df), ]
+MuMIn.bic2 <- get.models(low_BIC_subsets, 1)[[1]]
 ```
 
 ```{r exhaustive-search-summary, warning=FALSE, message=FALSE, include=FALSE}
@@ -264,7 +268,56 @@ msummary(list(`lmSubsets Exhaustive AIC` = fit.lmSubsets.aic,
               `leaps Exhaustive BIC` = leaps.bic,
               `MuMIn Exhaustive BIC` = MuMIn.bic),
          coef_omit = c(-1),
-         title = "Exhaustive search summary")
+         title = "Exhaustive search summary",
+         fmt = fmt_statistic(rmse = 3))
+```
+
+```{r changeable-unchangeable, include = FALSE}
+# --- Define groups ---
+unchangeable_vars <- c("Log.Lot.Size", "Waterfront", "Log.Age", "Log.Land.Value", "Pct.College")
+changeable_vars   <- c("Living.Area", "Bathrooms", "Bedrooms", "Rooms",
+                       "Central.Air", "New.Construct", "Heat.Type",
+                       "Fuel.Type", "Fireplaces", "Sewer.Type")
+data_U <- data_cleaned[, c("Log.Price", unchangeable_vars)]
+data_C <- data_cleaned[, c("Log.Price", changeable_vars)]
+
+#--- UNCHANGEABLE VARIABLES ---
+m0_U <- lm(Log.Price ~ 1, data = data_U)
+m1_U <- lm(Log.Price ~ ., data = data_U)
+# Forward selection
+step_fwd_U <- step(m0_U, scope = list(lower = m0_U, upper = m1_U),
+                   direction = "forward", trace = FALSE)
+# Backward selection
+step_back_U <- step(m1_U, direction = "backward", trace = FALSE)
+# Stepwise (both)
+step_both_U <- step(m0_U, scope = list(lower = m0_U, upper = m1_U),
+                    direction = "both", trace = FALSE)
+# Compare the models
+msummary(list(`Step fwd` = step_fwd_U,
+              `Step bwd` = step_back_U,
+              `Step both` = step_both_U),
+         title = "Unchangeable models from stepwise selection (AIC)")
+# The 3 models given by stepwise selection are the same
+unchangeable.lm <- step_both_U
+
+# --- CHANGEABLE VARIABLES ---
+m0_C <- lm(Log.Price ~ 1, data = data_C)
+m1_C <- lm(Log.Price ~ ., data = data_C)
+# Forward selection
+step_fwd_C <- step(m0_C, scope = list(lower = m0_C, upper = m1_C),
+                   direction = "forward", trace = FALSE)
+# Backward selection
+step_back_C <- step(m1_C, direction = "backward", trace = FALSE)
+# Stepwise (both)
+step_both_C <- step(m0_C, scope = list(lower = m0_C, upper = m1_C),
+                    direction = "both", trace = FALSE)
+# Compare the models
+msummary(list(`Step fwd` = step_fwd_C,
+              `Step bwd` = step_back_C,
+              `Step both` = step_both_C),
+         title = "Changeable models from stepwise selection (AIC)")
+# The 3 models given by stepwise selection are the same
+changeable.lm <- step_both_C
 ```
 
 ```{r model-summary, warning=FALSE, message=FALSE, include=FALSE}
@@ -278,31 +331,46 @@ msummary(list(`Exhaustive AIC` = MuMIn.aic,
               `Step both BIC` = step.both.bic,
               `Step fwd p-val` = step.fwd.p,
               `Step bwd p-val` = step.bwd.p,
-              `Step both p-val` = step.both.p),
+              `Step both p-val` = step.both.p,
+              `Additional model` = MuMIn.bic2),
          output = "kableExtra",
-         escape = FALSE) %>%
+         escape = FALSE,
+         title = "Model selected using the criterion AIC/BIC/p-value") %>%
   kable_styling(latex_options = "scale_down", font_size = 8)
 
 print("Model 1: Exhaustive / Step bwd/both AIC")
 print("Model 2: Step fwd AIC")
 print("Model 3: Exhaustive/ Stepwise selection BIC")
-print("Model 4: Step fwd/both p-value")
-print("Model 5: Step bwd p-value")
-msummary(list(`Model 1 (AIC)` = step.both.aic,
+print("Model 4: Model with reasonably low BIC and few predictors")s
+print("Model 5: Step fwd/both p-value")
+print("Model 6: Step bwd p-value")
+print("Model 7: Unchangeable factors")
+print("Model 8: Changeable factors")
+
+e <- msummary(list(`Model 1 (AIC)` = step.both.aic,
               `Step fwd AIC` = step.fwd.aic,
-              `Model 3 (BIC)` = step.both.bic,
-              `Model 4 (p-val)` = step.both.p,
-              `Step bwd p-val` = step.bwd.p),
+              `Model 3 (Lowest BIC)` = step.both.bic,
+              `Model 4 (BIC 2)` = MuMIn.bic2,
+              `Model 5 (p-val)` = step.both.p,
+              `Step bwd p-val` = step.bwd.p,
+              `Unchangeable` = unchangeable.lm,
+              `Changeable` = changeable.lm),
          title="Unique models",
          output = "kableExtra",
          escape = FALSE,
          fmt = fmt_statistic(r.squared = 4, adj.r.squared = 4, rmse = 4)) %>%
   kable_styling(latex_options = "scale_down", font_size = 12)
+
+save_kable(e, file = "unique1.png")
 ```
 
 The final model-building process used forward, backward, and stepwise selection under AIC. All approaches achieved similar explanatory power (adjusted $R^2 \approx 0.59$). Backward and Stepwise method converged to the same model with a lower AIC of 635.2 compared to Forward with 638.4. This backward/stepwise was therefore chosen as our final model as it offers a slightly stronger explanatory ability without overfitting. It has 9 predictor variables: Waterfront, New.Construct, Central.Air, Fuel.Type.Gas, Fuel.Type.Wood, Living.Area, Bathrooms, Log.Age, Log.Land.Value.
 
 ## Results
+
+```{r}
+# PERFORMANCE TESTS
+```
 
 ## Discussion and conclusion
 
