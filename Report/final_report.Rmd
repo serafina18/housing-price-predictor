@@ -28,6 +28,37 @@ urlcolor: blue
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r, warning=FALSE, message=FALSE}
+# Libraries
+library(tidyverse)
+library(ggplot2)
+library(scales)
+library(knitr)
+library(kableExtra)
+library(ggfortify)
+library(patchwork)
+
+
+# Data load
+data <- read.delim(
+  "housing-prices-ge19.txt",
+  header = TRUE, sep = "\t",
+  quote = "", comment.char = "",
+  check.names = TRUE
+)
+
+# Coerce factors
+data <- data %>%
+  mutate(
+    Waterfront   = as.factor(Waterfront),
+    New.Construct = as.factor(New.Construct),
+    Central.Air  = as.factor(Central.Air),
+    Fuel.Type    = as.factor(Fuel.Type),
+    Heat.Type    = as.factor(Heat.Type),
+    Sewer.Type   = as.factor(Sewer.Type),
+  )
+```
+
 ## Abstract
 ## Introduction
 
@@ -37,9 +68,200 @@ The dataset used in this study is the 2006 Saratoga Housing Data, which contains
 The dependent variable is Price of each house. The data contain no missing values and include the dependent variable, Price, alongside predictor variables such as Lot Size, Living Area, Land Value, Age, Waterfront, New.Construct, Central.Air, Fuel.Type, and others.
 
 ## Analysis
+```{r}
+# Clean
+data_cleaned <- data %>%
+  filter(Lot.Size > 0) %>%
+  filter(!(Age == 0 & New.Construct == 0))
+
+data_cleaned <- data_cleaned %>%
+  mutate(
+    Log.Price = log(Price),
+    Log.Lot.Size = log(Lot.Size),
+    Log.Age = ifelse(Age != 0, log(Age), 0),
+    Log.Land.Value = log(Land.Value)
+  ) %>%
+  select(-Price, -Lot.Size, -Age, -Land.Value, -Test)
+```
+
 A multiple linear regression model was used to review how property characteristics influence Log(Price). Prior to building our model, basic data cleaning was done to remove invalid and inconsistent entries such as Lot.Size = 0 or Age = 0 with New.Construct = 0. All categorical variables are also encoded into factors. Finally, log transformations were applied to skewed variables (Price, Lot.Size, Age, Land.Value) to stabilize variance and improve normality. 
 
 As part of the initial data exploration, variables were grouped into unchangeable (e.g., Lot.Size, Waterfront, Age, Land.Value, Pct.College) and changeable factors (e.g., Living.Area, Bathrooms, Bedrooms, Central.Air, Fireplaces, New.Construct, Fuel.Type). We performed stepwise selection within each group to assess significance, and found that 38% of the housing price variation is explained by unchangeable factors $(R^2 = 0.38)$ while 55% are of changeable factors $(R^2 = 0.55)$.
+
+```{r}
+# --- STEPWISE SELECTION ON FULL MODEL ---
+
+M0_null <- lm(Log.Price ~ 1, data = data_cleaned)
+M1_full <- lm(Log.Price ~ ., data = data_cleaned)
+
+#Forward
+step_fwd_full <- step(
+  M0_null,
+  scope = list(lower = M0_null, upper = M1_full),
+  direction = "forward",
+  trace = FALSE
+)
+#summary(step_fwd_full)
+
+#Backward
+step_back_full <- step(
+  M1_full,
+  direction = "backward",
+  trace = FALSE
+)
+#summary(step_back_full)
+
+#Stepwise
+step_both_full <- step(
+  M0_null,
+  scope = list(lower = M0_null, upper = M1_full),
+  direction = "both",
+  trace = FALSE
+)
+#summary(step_both_full)
+
+# AIC(step_fwd_full)
+# AIC(step_back_full)
+# AIC(step_both_full)
+```
+
+
+```{r, warning=FALSE}
+# --- EXHAUSTIVE SEARCH + BIC ---
+library(lmSubsets)
+# exh = lmSubsets(Log.Price ~ ., data = data_cleaned, nbest = 15)
+# plot(exh)
+# exh = lmSubsets(Log.Price ~ ., data = data_cleaned, nbest = 10)
+# plot(exh)
+exh = lmSubsets(Log.Price ~ ., data = data_cleaned)
+plot(exh)
+
+library(plotly)
+plotly(plot(exh))
+```
+
+```{r}
+n = nrow(data_cleaned)
+rgsbst.aic = lmSelect(Log.Price ~ ., data = data_cleaned, penalty = "AIC")
+fit.rgsbst.aic =lm(formula(rgsbst.aic), data = data_cleaned)
+step.bwd.aic = step(M1_full, direction = "backward", trace = 0)
+step.fwd.aic = step(M0_null, scope = list(upper = M1_full, lower = M0_null), direction = "forward", trace = 0)
+step.both.aic = step(M0_null, scope = list(upper = M1_full, lower = M0_null), direction = "both", trace = 0)
+rgsbst.bic = lmSelect(Log.Price ~ ., data = data_cleaned, penalty = "BIC")
+fit.rgsbst.bic <- lm(formula(rgsbst.bic), data = data_cleaned)
+step.bwd.bic = step(M1_full, k = log(n), direction = "backward", trace = 0)
+step.fwd.bic = step(M0_null, k = log(n), scope = list(upper = M1_full, lower = M0_null), direction = "forward", trace = 0)
+step.both.bic = step(M0_null, k = log(n), scope = list(upper = M1_full, lower = M0_null), direction = "both", trace = 0)
+```
+
+```{r}
+exh.aic <- bestglm(data.frame(Log.Price = data_cleaned$Log.Price, data_cleaned[ , -which(names(data_cleaned) == "Log.Price")]),
+                      IC = "AIC", method = "exhaustive")
+exh.bic <- bestglm(data.frame(Log.Price = data_cleaned$Log.Price, data_cleaned[ , -which(names(data_cleaned) == "Log.Price")]),
+                      IC = "BIC", method = "exhaustive")
+```
+
+```{r}
+X <- model.matrix(Log.Price ~ . , data = data_cleaned)[ , -1]  # drop intercept
+# Step 3: Remove any columns with zero variance
+X <- X[, apply(X, 2, var, na.rm = TRUE) > 0]
+
+df_bestglm <- data.frame(Log.Price = data_cleaned$Log.Price, X)
+
+fixed.exh.aic <- bestglm(df_bestglm, IC = "AIC", method = "exhaustive")
+fixed.exh.bic <- bestglm(df_bestglm, IC = "BIC", method = "exhaustive")
+```
+
+```{r}
+library(leaps)
+
+exhaustive <- regsubsets(Log.Price ~ ., data = data_cleaned, nbest = 1, nvmax = 15, method = "exhaustive")
+summary_exh <- summary(exhaustive)
+
+# Function to clean dummy variable names from regsubsets
+clean_dummy_names <- function(dummy_vars, data) {
+  cleaned <- sapply(dummy_vars, function(varname) {
+    # Remove trailing numbers (e.g., "Waterfront1" -> "Waterfront")
+    base <- gsub("\\d+$", "", varname)
+    
+    # Check if it matches a factor level pattern like "Fuel.TypeGas" -> "Fuel.Type"
+    matched <- sapply(names(data), function(col) {
+      if (is.factor(data[[col]]) || is.character(data[[col]])) {
+        startsWith(varname, col)
+      } else FALSE
+    })
+    
+    if (any(matched)) {
+      names(data)[matched][1]  # return the first matching column
+    } else {
+      base  # fallback: return stripped number version
+    }
+  })
+  
+  unique(cleaned)
+}
+```
+
+```{r}
+# Compute AIC and BIC for each subset
+n <- nrow(data_cleaned)
+aic_values <- n * log(summary_exh$rss / n) + 2 * (1 + summary_exh$which %>% rowSums())
+bic_values <- n * log(summary_exh$rss / n) + log(n) * (1 + rowSums(summary_exh$which))
+
+# Select model with the best AIC
+i_best_aic <- which.min(aic_values)
+best_vars_aic <- setdiff(names(which(summary_exh$which[i_best_aic, ]))[summary_exh$which[i_best_aic, ]], "(Intercept)")
+best_vars_aic <- best_vars_aic[!is.na(best_vars_aic)]
+best_vars_aic_clean <- clean_dummy_names(best_vars_aic, data_cleaned)
+
+formula_best_aic <- as.formula(paste("Log.Price ~", paste(best_vars_aic_clean, collapse = " + ")))
+best_model_aic <- lm(formula_best_aic, data = data_cleaned)
+AIC(best_model_aic)
+
+# Select model with the best BIC
+i_best_bic <- which.min(bic_values)
+best_vars_bic <- setdiff(names(which(summary_exh$which[i_best_bic, ]))[summary_exh$which[i_best_bic, ]], "(Intercept)")
+best_vars_bic <- best_vars_bic[!is.na(best_vars_bic)]
+best_vars_bic_clean <- clean_dummy_names(best_vars_bic, data_cleaned)
+
+formula_best_bic <- as.formula(paste("Log.Price ~", paste(best_vars_bic_clean, collapse = " + ")))
+best_model_bic <- lm(formula_best_bic, data = data_cleaned)
+BIC(best_model_bic)
+```
+
+```{r}
+library(MuMIn)
+global_model <- lm(Log.Price ~ ., data = data_cleaned, na.action = na.pass)
+all_subsets <- dredge(global_model, rank = "AIC", 
+                      extra = c("BIC", "R^2", "adjR^2"))
+best_model_aic <- get.models(all_subsets, 1)[[1]]
+all_subsets <- all_subsets[order(all_subsets$BIC), ]
+best_model_bic <- get.models(all_subsets, 1)[[1]]
+```
+
+
+```{r}
+library(modelsummary)
+msummary(list(`bestglm Exhaustive AIC` = exh.aic$BestModel,
+              `lmSubsets Exhaustive AIC` = fit.rgsbst.aic,
+              `Step fwd AIC` = step.fwd.aic,
+              `Step bwd AIC` = step.bwd.aic,
+              `Step both AIC` = step.both.aic,
+              `bestglm Exhaustive BIC` = exh.bic$BestModel,
+              `lmSubsets Exhaustive BIC` = fit.rgsbst.bic,
+              `Step fwd BIC` = step.fwd.bic,
+              `Step bwd BIC` = step.bwd.bic,
+              `Step both BIC` = step.both.bic))
+
+# msummary(list(`Exhaustive AIC` = exh.aic$BestModel,
+#               `Step fwd AIC` = step.fwd.aic,
+#               `Step bwd AIC` = step.bwd.aic,
+#               `Step both AIC` = step.both.aic,
+#               `Exhaustive BIC` = exh.bic$BestModel,
+#               `Step fwd BIC` = step.fwd.bic,
+#               `Step bwd BIC` = step.bwd.bic,
+#               `Step both BIC` = step.both.bic))
+```
 
 The final model-building process used forward, backward, and stepwise selection under AIC. All approaches achieved similar explanatory power (adjusted $R^2 \approx 0.59$). Backward and Stepwise method converged to the same model with a lower AIC of 635.2 compared to Forward with 638.4. This backward/stepwise was therefore chosen as our final model as it offers a slightly stronger explanatory ability without overfitting. It has 9 predictor variables: Waterfront, New.Construct, Central.Air, Fuel.Type.Gas, Fuel.Type.Wood, Living.Area, Bathrooms, Log.Age, Log.Land.Value.
 
