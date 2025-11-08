@@ -110,6 +110,60 @@ step.fwd.bic = step(M0_null, k = log(n), scope = list(upper = M1_full, lower = M
 step.both.bic = step(M0_null, k = log(n), scope = list(upper = M1_full, lower = M0_null), direction = "both", trace = 0)
 ```
 
+```{r stepwise-selection-p}
+
+# Stepwise selection based on p-value threshold
+stepwise_p <- function(min_model, full_model, direction = c("both", "backward", "forward"), alpha_enter = 0.05, alpha_remove = 0.05) {
+  if (direction == "backward") {
+    current_model <- full_model
+  } else {
+    current_model <- min_model
+  }
+  repeat {
+    # Forward selection: check which variable to add
+    if (direction != "backward") {
+      add_candidates <- add1(current_model, scope = formula(full_model), test = "F")
+      add_candidates <- add_candidates[-1, ]  # remove (none)
+      
+      p_add <- add_candidates$`Pr(>F)`
+      if(any(p_add < alpha_enter)) {
+        # Add the most significant variable
+        best_var <- rownames(add_candidates)[which.min(p_add)]
+        current_model <- update(current_model, paste(". ~ . +", best_var))
+        next
+      }
+    }
+    
+    # Backward elimination: check which variable to remove
+    if (direction != "forward") {
+      if(length(coef(current_model)) > 1) {
+        drop_candidates <- drop1(current_model, test = "F")
+        drop_candidates <- drop_candidates[-1, ]  # remove intercept
+        p_drop <- drop_candidates$`Pr(>F)`
+        if(any(p_drop > alpha_remove)) {
+          worst_var <- rownames(drop_candidates)[which.max(p_drop)]
+          current_model <- update(current_model, paste(". ~ . -", worst_var))
+          next
+        }
+      }
+    }
+    
+    break
+  }
+  return(current_model)
+}
+
+# Run stepwise selection
+step.bwd.p = stepwise_p(M0_null, M1_full, direction = "backward")
+step.fwd.p <- stepwise_p(M0_null, M1_full, direction = "forward")
+step.both.p <- stepwise_p(M0_null, M1_full, direction = "both")
+```
+
+```{r}
+drop1(M0_null)
+```
+
+
 ```{r fig.height=4, fig.width=6, warning=FALSE}
 library(lmSubsets)
 exh = lmSubsets(Log.Price ~ ., data = data_cleaned, nbest = 3)
@@ -203,7 +257,6 @@ MuMIn.bic <- get.models(all_subsets, 1)[[1]]
 
 ```{r exhaustive-search-summary, warning=FALSE, message=FALSE, include=FALSE}
 library(modelsummary)
-library(tinytable)
 msummary(list(`lmSubsets Exhaustive AIC` = fit.lmSubsets.aic,
               `leaps Exhaustive AIC` = leaps.aic,
               `MuMIn Exhaustive AIC` = MuMIn.aic,
@@ -215,7 +268,6 @@ msummary(list(`lmSubsets Exhaustive AIC` = fit.lmSubsets.aic,
 ```
 
 ```{r model-summary, warning=FALSE, message=FALSE, include=FALSE}
-library(modelsummary)
 msummary(list(`Exhaustive AIC` = MuMIn.aic,
               `Step fwd AIC` = step.fwd.aic,
               `Step bwd AIC` = step.bwd.aic,
@@ -223,20 +275,29 @@ msummary(list(`Exhaustive AIC` = MuMIn.aic,
               `Exhaustive BIC` = MuMIn.bic,
               `Step fwd BIC` = step.fwd.bic,
               `Step bwd BIC` = step.bwd.bic,
-              `Step both BIC` = step.both.bic),
+              `Step both BIC` = step.both.bic,
+              `Step fwd p-val` = step.fwd.p,
+              `Step bwd p-val` = step.bwd.p,
+              `Step both p-val` = step.both.p),
          output = "kableExtra",
          escape = FALSE) %>%
   kable_styling(latex_options = "scale_down", font_size = 8)
+
 print("Model 1: Exhaustive / Step bwd/both AIC")
 print("Model 2: Step fwd AIC")
 print("Model 3: Exhaustive/ Stepwise selection BIC")
-msummary(list(`Model 1` = step.both.aic,
-              `Model 2` = step.fwd.aic,
-              `Model 3` = step.both.bic),
+print("Model 4: Step fwd/both p-value")
+print("Model 5: Step bwd p-value")
+msummary(list(`Model 1 (AIC)` = step.both.aic,
+              `Step fwd AIC` = step.fwd.aic,
+              `Model 3 (BIC)` = step.both.bic,
+              `Model 4 (p-val)` = step.both.p,
+              `Step bwd p-val` = step.bwd.p),
          title="Unique models",
          output = "kableExtra",
-         escape = FALSE) %>%
-  kable_styling(latex_options = "scale_down", font_size = 8)
+         escape = FALSE,
+         fmt = fmt_statistic(r.squared = 4, adj.r.squared = 4, rmse = 4)) %>%
+  kable_styling(latex_options = "scale_down", font_size = 12)
 ```
 
 The final model-building process used forward, backward, and stepwise selection under AIC. All approaches achieved similar explanatory power (adjusted $R^2 \approx 0.59$). Backward and Stepwise method converged to the same model with a lower AIC of 635.2 compared to Forward with 638.4. This backward/stepwise was therefore chosen as our final model as it offers a slightly stronger explanatory ability without overfitting. It has 9 predictor variables: Waterfront, New.Construct, Central.Air, Fuel.Type.Gas, Fuel.Type.Wood, Living.Area, Bathrooms, Log.Age, Log.Land.Value.
