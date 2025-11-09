@@ -1,13 +1,42 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    https://shiny.posit.co/
-#
-
 library(shiny)
+library(tidyverse)
+
+data <- read.delim(
+  "housing-prices-ge19.txt",
+  header = TRUE, sep = "\t",
+  quote = "", comment.char = "",
+  check.names = TRUE
+)
+
+data <- data %>%
+  mutate(
+    Waterfront   = as.factor(Waterfront),
+    New.Construct = as.factor(New.Construct),
+    Central.Air  = as.factor(Central.Air),
+    Fuel.Type    = as.factor(Fuel.Type),
+    Heat.Type    = as.factor(Heat.Type),
+    Sewer.Type   = as.factor(Sewer.Type),
+  )
+
+# Clean
+data_cleaned <- data %>%
+  filter(Lot.Size > 0) %>%
+  filter(!(Age == 0 & New.Construct == 0))
+
+data_cleaned <- data_cleaned %>%
+  mutate(
+    Log.Price = log(Price),
+    Log.Lot.Size = log(Lot.Size),
+    Log.Age = ifelse(Age != 0, log(Age), 0),
+    Log.Land.Value = log(Land.Value)
+  ) %>%
+  select(-Price, -Lot.Size, -Age, -Land.Value, -Test)
+
+# Final model
+final_model <- lm(formula = Log.Price ~ Bathrooms + Heat.Type + Living.Area + 
+                    Log.Age + Log.Land.Value + New.Construct + Waterfront,
+                  data = data_cleaned)
+
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
