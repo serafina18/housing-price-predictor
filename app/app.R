@@ -41,21 +41,44 @@ final_model <- lm(formula = Log.Price ~ Bathrooms + Heat.Type + Living.Area +
 ui <- fluidPage(
 
     # Application title
-    titlePanel("Old Faithful Geyser Data"),
+    titlePanel("House prices in Saratoga, New York"),
 
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
+            # sliderInput("bins",
+            #             "Number of bins:",
+            #             min = 1,
+            #             max = 50,
+            #             value = 30),
+            numericInput("bathrooms",
+                        "Number of bathrooms:",
+                        val = 2,
+                        min = 0.5, max = 7, step = 0.5),
+            selectInput("heat_type",
+                        "Type of heating system:",
+                        choices = c("Electric", "Hot Air", "Hot Water", "None")),
+            numericInput("living_area",
+                         "Living area (square feet):",
+                         value = 1610,
+                         min = 1),
+            numericInput("age",
+                         "Age of house (years)",
+                         value = 19,
+                         min = 0, step = 1),
+            numericInput("land_value",
+                         "Value of land (US dollars):",
+                         value = 25000,
+                         min = 1),
+            checkboxInput("new_construct",
+                          "Is a new construction?"),
+            checkboxInput("waterfront", 
+                          "Includes waterfront?")
         ),
 
         # Show a plot of the generated distribution
         mainPanel(
-           plotOutput("distPlot")
+           # plotOutput("distPlot")
         )
     )
 )
