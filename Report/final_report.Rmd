@@ -3,6 +3,7 @@ title: 'Executive Summary: What Really Drives House Prices? Comparing Unchangeab
   and Changeable Factors in New York State'
 author: Group L91G03 — Anne Do, Arielle Melamed, Serafina Aurelia, Eric Lee, Haresh
   Kumararajah
+  
 output:
   pdf_document:
     number_sections: false
@@ -26,6 +27,11 @@ header-includes:
 - \AtBeginEnvironment{quote}{\small}
 linkcolor: black
 urlcolor: blue
+
+bibliography: [refs/references.bib, refs/packages.bib]
+csl: refs/apa.csl
+nocite: |
+  @*
 ---
 
 ```{r setup, include=FALSE}
@@ -321,6 +327,9 @@ msummary(list(`Step fwd` = step_fwd_C,
 changeable.lm <- step_both_C
 ```
 
+
+
+
 ```{r model-summary, warning=FALSE, message=FALSE, include=FALSE}
 msummary(list(`Exhaustive AIC` = MuMIn.aic,
               `Step fwd AIC` = step.fwd.aic,
@@ -342,13 +351,13 @@ msummary(list(`Exhaustive AIC` = MuMIn.aic,
 print("Model 1: Exhaustive / Step bwd/both AIC")
 print("Model 2: Step fwd AIC")
 print("Model 3: Exhaustive/ Stepwise selection BIC")
-print("Model 4: Model with reasonably low BIC and few predictors")s
+print("Model 4: Model with reasonably low BIC and few predictors")
 print("Model 5: Step fwd/both p-value")
 print("Model 6: Step bwd p-value")
 print("Model 7: Unchangeable factors")
 print("Model 8: Changeable factors")
 
-e <- msummary(list(`Model 1 (AIC)` = step.both.aic,
+msummary(list(`Model 1 (AIC)` = step.both.aic,
               `Step fwd AIC` = step.fwd.aic,
               `Model 3 (Lowest BIC)` = step.both.bic,
               `Model 4 (BIC 2)` = MuMIn.bic2,
@@ -361,15 +370,15 @@ e <- msummary(list(`Model 1 (AIC)` = step.both.aic,
          escape = FALSE,
          fmt = fmt_statistic(r.squared = 4, adj.r.squared = 4, rmse = 4)) %>%
   kable_styling(latex_options = "scale_down", font_size = 12)
-
-save_kable(e, file = "unique1.png")
 ```
 
-The final model-building process used forward, backward, and stepwise selection under AIC. All approaches achieved similar explanatory power (adjusted $R^2 \approx 0.59$). Backward and Stepwise method converged to the same model with a lower AIC of 635.2 compared to Forward with 638.4. This backward/stepwise was therefore chosen as our final model as it offers a slightly stronger explanatory ability without overfitting. It has 9 predictor variables: Waterfront, New.Construct, Central.Air, Fuel.Type.Gas, Fuel.Type.Wood, Living.Area, Bathrooms, Log.Age, Log.Land.Value.
+We applied a combination of stepwise selection (AIC, BIC, and p-value–based criteria) and exhaustive search techniques ( lmSubsets, leaps, and MuMIn). Stepwise selection was performed in forward, backward, and both directions. To further confirm these results, we conducted three exhaustive search techniques under both AIC and BIC criteria. This approach provides a comprehensive way to select our final model.
+
+Among all models evaluated, Model 4 (BIC 2) was chosen as our final model - done through exhaustive search using MuMIn package under BIC. While Model 3 provided the lowest BIC with 9 predictors, however the difference was negligible to Model 4 which only uses 7 predictors. Both models achieved almost identical explanatory power at $R^2 = 0.5853$, but Model 4 provides us with a simpler and more interpretable model without compromising accuracy.
 
 ## Results
 
-```{r k-fold cross validation, warning=FALSE, message=FALSE, include=FALSE}
+```{r k-fold cross validation, warning=FALSE, message=FALSE, include=TRUE}
 library(caret)
 
 cv_metrics <- function(form, data, v) {
@@ -383,6 +392,29 @@ cv_metrics <- function(form, data, v) {
   metrics_df = cv$results
   tibble(RMSE = metrics_df$RMSE, MAE = metrics_df$MAE, Rsquared = metrics_df$Rsquared)
 }
+
+models <- list(
+  step.both.aic,
+  step.fwd.aic,
+  step.both.bic,
+  MuMIn.bic2,
+  step.both.p,
+  step.bwd.p,
+  unchangeable.lm,
+  changeable.lm
+)
+
+model_names <- c(
+  "Model 1 (AIC)",
+  "Step fwd AIC",
+  "Model 3 (Lowest BIC)",
+  "Model 4 (BIC 2)",
+  "Model 5 (p-val)",
+  "Step bwd p-val",
+  "Unchangeable",
+  "Changeable"
+)
+
 
 results_tbl <- map2_dfr(models, model_names, function(mod, mod_name) {
   # extract formula
@@ -406,5 +438,117 @@ results_tbl  %>%
 final.model <- MuMIn.bic2
 ```
 
-## Discussion and conclusion
+###Assumption checking
+
+The independence assumption is not satisfied. Firstly, there could be spatial correlation between the houses. The value of nearby homes is interconnected because they share unmeasured characteristics, such as poverty level and local amenities. Secondly, the dataset was extracted from housing sales data within the 2001 - 2006 period, which contains repeat sales of the same houses [@corvetti_2007]. Even when the dataset we used for the linear regression model only contains data from 2006, it could still be repeat sales, which are not independent from each other.
+
+```{r assumption-checking}
+autoplot(final.model, which = 1:2)
+```
+
+The residuals are relatively randomly scattered around the zero lines, i.e. there is no pattern. Hence, the linearity assumption is satisfied.
+
+The spread of residuals looks reasonably constant over the range of fitted log price values. Hence, the homoscedasticity assumption for the residuals is satisfied.
+
+In the Q-Q plot of residuals, points at the tails deviate from the diagonal line. However, with a large sample size (n = 1684), the Central Limit Theorem ensures that the coefficient estimates’ sampling distribution is approximately normal, so inference remains valid.
+
+```{r cor-mat, fig.height=3, fig.width=3}
+library(corrplot)
+continuous_vars <- c("Living.Area", "Log.Land.Value", "Bathrooms", "Log.Age") # Fwd
+numeric_data <- data_cleaned[, (names(data_cleaned) %in% continuous_vars)]
+cor_mat = cor(numeric_data)
+
+cor.mtest <- function(mat, ...) {
+    mat <- as.matrix(mat)
+    n <- ncol(mat)
+    p.mat<- matrix(NA, n, n)
+    diag(p.mat) <- 0
+    for (i in 1:(n - 1)) {
+        for (j in (i + 1):n) {
+            tmp <- cor.test(mat[, i], mat[, j], ...)
+            p.mat[i, j] <- p.mat[j, i] <- tmp$p.value
+        }
+    }
+  colnames(p.mat) <- rownames(p.mat) <- colnames(mat)
+  p.mat
+}
+
+# matrix of the p-value of the correlation
+p.mat <- cor.mtest(numeric_data)
+
+corrplot(cor_mat, method="color", 
+         # col=col(200),  
+         type="upper",
+         order="hclust",
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         # Combine with significance
+         p.mat = p.mat, sig.level = 0.05, insig = "blank", 
+         # hide correlation coefficient on the principal diagonal
+         diag=FALSE 
+         )
+```
+
+```{r vif, warning=}
+library(car)
+vif(final.model)%>%
+  kable(col.names = c("GVIF", "Df", "Adjusted GVIF (=~ VIF)"), align = "lccc",
+        caption = "VIF values") %>%
+  kable_classic(full_width = FALSE)
+```
+
+There is no multicollinearity as no pair of predictors are highly correlated (i.e., having |r| > 0.8).
+
+## 5 Discussion
+### 5.1 Coefficients
+The regression model indicates that both changeable and immutable housing attributes influence price, though changeable factors have stronger predictive power. Figure 4 summarises the impact of each variable in practical units. For example, the presence of a waterfront is associated with a 76% increase in housing price. For log-transformed variables, the changes are expressed by percent, such as Land Value increase of 10% being associated with a 1.18% increase on price. The model intercept (10.2), exponentially transformed to produce price baseline $28,750, represents the expected housing price when all predictive variables are at default value.  
+
+```{r}
+library(tibble)
+library(gt)
+
+effects <- tribble(
+~Variable,           ~`Change in unit`, ~`Impact on price (%)`,
+"Bathrooms",         "+1",              "+10.26%",
+"Living area",       "+100 sq ft",      "+2.89%",
+"Land value",        "+10%",            "+1.18%",
+"Waterfront",        "Yes",             "+76.03%",
+"Heat: Hot Air",     "Yes",             "+9.39%",
+"Heat: Hot Water",   "Yes",             "+7.41%",
+"Heat: None",        "Yes",             "-39.32%",
+"Age",               "+10%",            "-0.57%",
+"New construction",  "Yes",             "-25.72%"
+)
+
+gt(effects)
+
+```
+
+Changeable variables - living area, bathrooms, heating type, and new construction - help *homeowners* select renovations that optimise housing price, alongside practical considerations such as construction costs and regulations. For example, approximately 350 sq ft of added living area has a similar effect on price as adding an extra bathroom or switching to hot-air heating.
+
+Immutable attributes - waterfront location, land value, and age - enable *prospective buyers/sellers* to make informed investment decisions and assess whether a property is fairly priced. The complete model sets realistic expectations that renovation is not the sole driver of value, and even homeowners with favourable fixed housing attributes should not be complacent.
+
+### 5.2 Limitations
+The model's representativeness is limited as the data was recorded in 2006, immediately prior to the Global Financial Crisis (2007-2009). This heavily disrupted the housing market (see Figure 5) and irrational pricing trends may emerge that do not reflect 2025 conditions. Moreover, the data originates from Saratoga, a suburban area of New York, and may not generalise to urban or highly metropolitan areas of New York State, such as New York City.
+
+The risk of overfitting was mitigated through k-fold cross validation, which was appropriate as the model was not overly complex and had sufficient entries. Residual risk of minor overfitting remains. 
+
+Independence is not met, as discussed in the Assumption section. 
+
+<img src="https://lh3.googleusercontent.com/proxy/XMJ6hvlvaUW5ogMkMWKEoj7q42L4P8Z2MCYOvtkOROAYGaSDgxX0G1qIRDyGYK-PP0XoGNa9cU7246N9KyhhXIm4CO3WRcTu_Rc" style="width:100%; display:block; margin:0 auto;">
+
+
+### 5.3 Future Work
+We seek to acquire more recent data, with zip code location and time series stamps, and additional variables such as proximity to schools and crime rates. This would enhance the model's predictive power and accuracy, supporting the creation of interactive geographic visualisations that improve accessibility for non-technical users.
+
+
+## 6 Conclusion
+This report employs a log-transformed regression model to analyse how changeable and immutable housing attributes impact housing price in Saratoga. While changeable variables have the strongest predictive power, unchangeable variables such as Waterfront remain significant. These findings support more informed rennovation, investment and price valuation decisions by homeowners, buyers and sellers.
+
+```{r}
+# creates a file with the bibtex for packages used:
+knitr::write_bib(c(.packages(), "knitr", "rmarkdown"),
+                 "refs/packages.bib")
+# extra bibliography for manually added references bibliography.bibtex
+```
 
