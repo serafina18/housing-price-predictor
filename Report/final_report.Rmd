@@ -389,7 +389,7 @@ results_tbl <- map2_dfr(models, model_names, function(mod, mod_name) {
   f <- formula(mod)
   
   # run 10-fold CV on data_cleaned
-  metrics <- cv_metrics(f, data = data_cleaned, v = 10)
+  metrics <- cv_metrics(f, data = data_cleaned, v = 5)
   
   tibble(Model = mod_name, RMSE = metrics$RMSE, 
          MAE = metrics$MAE, Rsquared = metrics$Rsquared)
@@ -398,7 +398,7 @@ results_tbl <- map2_dfr(models, model_names, function(mod, mod_name) {
 results_tbl  %>%
   mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
   kable(col.names = c("Model", "RMSE", "MAE", "Rsquared"), align = "lcc",
-        caption = "10-fold cross validation") %>%
+        caption = "5-fold cross validation") %>%
   kable_classic(full_width = FALSE)
 ```
 
