@@ -253,9 +253,7 @@ leaps.bic <- lm(formula_best_bic, data = data_cleaned)
 # EXHAUSTIVE SEARCH 3
 # Using MuMIn::dredge() function
 library(MuMIn)
-global_model <- lm(Log.Price ~ ., data = data_cleaned, na.action = na.pass)
-all_subsets <- dredge(global_model, rank = "AIC", 
-                      extra = c("BIC", "R^2", "adjR^2"))
+load("exhaustiveSearch3.RData")
 ```
 
 ```{r exhaustive-search-3.5}
