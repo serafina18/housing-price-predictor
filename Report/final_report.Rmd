@@ -100,6 +100,8 @@ A multiple linear regression model was used to review how property characteristi
 
 As part of the initial data exploration, variables were grouped into unchangeable (e.g., Lot.Size, Waterfront, Age, Land.Value, Pct.College) and changeable factors (e.g., Living.Area, Bathrooms, Bedrooms, Central.Air, Fireplaces, New.Construct, Fuel.Type). We performed stepwise selection within each group to assess significance, and found that 38% of the housing price variation is explained by unchangeable factors $(R^2 = 0.38)$ while 55% are of changeable factors $(R^2 = 0.55)$.
 
+A comparison of in-sample model performance indicates that living area is the most significant individual predictor, accounting for 46.7% of the variation in property prices with an R² of 0.467, followed by bathrooms with an R² of 0.341, though it remains less influential than Living Area. The full model, which incorporates all our selected predictors, shows an R² of 0.587 and the lowest AIC value of 653.282, showing that it does in fact perform better than any single predictor. After categorized into changeable and unchangeable variables, the model with changeable variables with R² of 0.502 outperforms the model with unchangeable variables with R² of 0.330, suggesting that adaptable property features more significantly contribute to explaining price variability.
+
 ```{r}
 # --- STEPWISE SELECTION ON FULL MODEL ---
 
