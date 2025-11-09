@@ -321,6 +321,9 @@ msummary(list(`Step fwd` = step_fwd_C,
 changeable.lm <- step_both_C
 ```
 
+
+
+
 ```{r model-summary, warning=FALSE, message=FALSE, include=FALSE}
 msummary(list(`Exhaustive AIC` = MuMIn.aic,
               `Step fwd AIC` = step.fwd.aic,
