@@ -1,31 +1,66 @@
 ---
-title: "Executive Summary: What Really Drives House Prices? Comparing Unchangeable and Changeable Factors in New York State"
-author: "Group L91G03 — Anne Do, Arielle Melamed, Serafina Aurelia, Eric Lee, Haresh Kumararajah"
+title: 'Executive Summary: What Really Drives House Prices? Comparing Unchangeable
+  and Changeable Factors in New York State'
+author: Group L91G03 — Anne Do, Arielle Melamed, Serafina Aurelia, Eric Lee, Haresh
+  Kumararajah
 output:
   pdf_document:
     number_sections: false
     fig_caption: true
     keep_tex: false
+  html_document:
+    df_print: paged
 fontsize: 11pt
 geometry: margin=1in
-# Keep it single-column for readability; 1in margins squeeze enough content without looking cramped.
 header-includes:
-  - \usepackage{microtype}
-  - \usepackage{titlesec}
-  - \titleformat{\section}{\bfseries\large}{\thesection}{0.5em}{}
-  - \titleformat{\subsection}{\bfseries}{\thesubsection}{0.5em}{}
-  - \setlength{\parskip}{0.3em}
-  - \setlength{\parindent}{0pt}
-  - \usepackage[font=small,labelfont=bf]{caption}
-  - \usepackage{etoolbox}
-  - \AtBeginEnvironment{quote}{\small}
+- \usepackage{microtype}
+- \usepackage{titlesec}
+- \titleformat{\section}{\bfseries\large}{\thesection}{0.5em}{}
+- \titleformat{\subsection}{\bfseries}{\thesubsection}{0.5em}{}
+- \setlength{\parskip}{0.3em}
+- \setlength{\parindent}{0pt}
+- \usepackage[font=small,labelfont=bf]{caption}
+- \usepackage{etoolbox}
+- \usepackage{tabularray}
+- \usepackage{siunitx}
+- \AtBeginEnvironment{quote}{\small}
 linkcolor: black
 urlcolor: blue
-
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r, warning=FALSE, message=FALSE}
+# Libraries
+library(tidyverse)
+library(ggplot2)
+library(scales)
+library(knitr)
+library(kableExtra)
+library(ggfortify)
+library(patchwork)
+
+
+# Data load
+data <- read.delim(
+  "housing-prices-ge19.txt",
+  header = TRUE, sep = "\t",
+  quote = "", comment.char = "",
+  check.names = TRUE
+)
+
+# Coerce factors
+data <- data %>%
+  mutate(
+    Waterfront   = as.factor(Waterfront),
+    New.Construct = as.factor(New.Construct),
+    Central.Air  = as.factor(Central.Air),
+    Fuel.Type    = as.factor(Fuel.Type),
+    Heat.Type    = as.factor(Heat.Type),
+    Sewer.Type   = as.factor(Sewer.Type),
+  )
 ```
 
 ## Abstract
@@ -37,13 +72,339 @@ The dataset used in this study is the 2006 Saratoga Housing Data, which contains
 The dependent variable is Price of each house. The data contain no missing values and include the dependent variable, Price, alongside predictor variables such as Lot Size, Living Area, Land Value, Age, Waterfront, New.Construct, Central.Air, Fuel.Type, and others.
 
 ## Analysis
+```{r}
+# Clean
+data_cleaned <- data %>%
+  filter(Lot.Size > 0) %>%
+  filter(!(Age == 0 & New.Construct == 0))
+
+data_cleaned <- data_cleaned %>%
+  mutate(
+    Log.Price = log(Price),
+    Log.Lot.Size = log(Lot.Size),
+    Log.Age = ifelse(Age != 0, log(Age), 0),
+    Log.Land.Value = log(Land.Value)
+  ) %>%
+  select(-Price, -Lot.Size, -Age, -Land.Value, -Test)
+```
+
 A multiple linear regression model was used to review how property characteristics influence Log(Price). Prior to building our model, basic data cleaning was done to remove invalid and inconsistent entries such as Lot.Size = 0 or Age = 0 with New.Construct = 0. All categorical variables are also encoded into factors. Finally, log transformations were applied to skewed variables (Price, Lot.Size, Age, Land.Value) to stabilize variance and improve normality. 
 
 As part of the initial data exploration, variables were grouped into unchangeable (e.g., Lot.Size, Waterfront, Age, Land.Value, Pct.College) and changeable factors (e.g., Living.Area, Bathrooms, Bedrooms, Central.Air, Fireplaces, New.Construct, Fuel.Type). We performed stepwise selection within each group to assess significance, and found that 38% of the housing price variation is explained by unchangeable factors $(R^2 = 0.38)$ while 55% are of changeable factors $(R^2 = 0.55)$.
 
+```{r}
+# --- STEPWISE SELECTION ON FULL MODEL ---
+
+M0_null <- lm(Log.Price ~ 1, data = data_cleaned)
+M1_full <- lm(Log.Price ~ ., data = data_cleaned)
+
+n <- nrow(data_cleaned)
+```
+
+```{r stepwise-selection}
+step.bwd.aic = step(M1_full, direction = "backward", trace = 0)
+step.fwd.aic = step(M0_null, scope = list(upper = M1_full, lower = M0_null), direction = "forward", trace = 0)
+step.both.aic = step(M0_null, scope = list(upper = M1_full, lower = M0_null), direction = "both", trace = 0)
+step.bwd.bic = step(M1_full, k = log(n), direction = "backward", trace = 0)
+step.fwd.bic = step(M0_null, k = log(n), scope = list(upper = M1_full, lower = M0_null), direction = "forward", trace = 0)
+step.both.bic = step(M0_null, k = log(n), scope = list(upper = M1_full, lower = M0_null), direction = "both", trace = 0)
+```
+
+```{r stepwise-selection-p}
+
+# Stepwise selection based on p-value threshold
+stepwise_p <- function(min_model, full_model, direction = c("both", "backward", "forward"), alpha_enter = 0.05, alpha_remove = 0.05) {
+  if (direction == "backward") {
+    current_model <- full_model
+  } else {
+    current_model <- min_model
+  }
+  repeat {
+    # Forward selection: check which variable to add
+    if (direction != "backward") {
+      add_candidates <- add1(current_model, scope = formula(full_model), test = "F")
+      add_candidates <- add_candidates[-1, ]  # remove (none)
+      
+      p_add <- add_candidates$`Pr(>F)`
+      if(any(p_add < alpha_enter)) {
+        # Add the most significant variable
+        best_var <- rownames(add_candidates)[which.min(p_add)]
+        current_model <- update(current_model, paste(". ~ . +", best_var))
+        next
+      }
+    }
+    
+    # Backward elimination: check which variable to remove
+    if (direction != "forward") {
+      if(length(coef(current_model)) > 1) {
+        drop_candidates <- drop1(current_model, test = "F")
+        drop_candidates <- drop_candidates[-1, ]  # remove intercept
+        p_drop <- drop_candidates$`Pr(>F)`
+        if(any(p_drop > alpha_remove)) {
+          worst_var <- rownames(drop_candidates)[which.max(p_drop)]
+          current_model <- update(current_model, paste(". ~ . -", worst_var))
+          next
+        }
+      }
+    }
+    
+    break
+  }
+  return(current_model)
+}
+
+# Run stepwise selection
+step.bwd.p = stepwise_p(M0_null, M1_full, direction = "backward")
+step.fwd.p <- stepwise_p(M0_null, M1_full, direction = "forward")
+step.both.p <- stepwise_p(M0_null, M1_full, direction = "both")
+```
+
+```{r}
+drop1(M0_null)
+```
+
+
+```{r fig.height=4, fig.width=6, warning=FALSE}
+library(lmSubsets)
+exh = lmSubsets(Log.Price ~ ., data = data_cleaned, nbest = 3)
+plot(exh)
+```
+
+
+```{r exhaustive-search-1}
+# EXHAUSTIVE SEARCH 1
+# Using lmSubsets::lmSelect() function
+lmSubsets.aic = lmSelect(Log.Price ~ ., data = data_cleaned, penalty = "AIC")
+fit.lmSubsets.aic =lm(formula(lmSubsets.aic), data = data_cleaned)
+
+lmSubsets.bic = lmSelect(Log.Price ~ ., data = data_cleaned, penalty = "BIC")
+fit.lmSubsets.bic <- lm(formula(lmSubsets.bic), data = data_cleaned)
+```
+
+```{r exhaustive-search-2, message=FALSE, warning=FALSE}
+# EXHAUSTIVE SEARCH 2
+# Using leaps::regsubsets() function
+
+library(leaps)
+
+invisible(capture.output(
+  exhaustive <- regsubsets(Log.Price ~ ., data = data_cleaned, 
+                           nbest = 1, nvmax = 15, method = "exhaustive")
+))
+summary_exh <- summary(exhaustive)
+
+# Function to clean dummy variable names from regsubsets
+clean_dummy_names <- function(dummy_vars, data) {
+  cleaned <- sapply(dummy_vars, function(varname) {
+    # Remove trailing numbers (e.g., "Waterfront1" -> "Waterfront")
+    base <- gsub("\\d+$", "", varname)
+    
+    # Check if it matches a factor level pattern like "Fuel.TypeGas" -> "Fuel.Type"
+    matched <- sapply(names(data), function(col) {
+      if (is.factor(data[[col]]) || is.character(data[[col]])) {
+        startsWith(varname, col)
+      } else FALSE
+    })
+    
+    if (any(matched)) {
+      names(data)[matched][1]  # return the first matching column
+    } else {
+      base  # fallback: return stripped number version
+    }
+  })
+  
+  unique(cleaned)
+}
+```
+
+```{r exhaustive-search-2.5}
+# Compute AIC and BIC for each subset
+aic_values <- n * log(summary_exh$rss / n) + 2 * (1 + summary_exh$which %>% rowSums())
+bic_values <- n * log(summary_exh$rss / n) + log(n) * (1 + rowSums(summary_exh$which))
+
+# Select model with the best AIC
+i_best_aic <- which.min(aic_values)
+best_vars_aic <- setdiff(names(which(summary_exh$which[i_best_aic, ]))[summary_exh$which[i_best_aic, ]], "(Intercept)")
+best_vars_aic <- best_vars_aic[!is.na(best_vars_aic)]
+best_vars_aic_clean <- clean_dummy_names(best_vars_aic, data_cleaned)
+formula_best_aic <- as.formula(paste("Log.Price ~", paste(best_vars_aic_clean, collapse = " + ")))
+leaps.aic <- lm(formula_best_aic, data = data_cleaned)
+
+# Select model with the best BIC
+i_best_bic <- which.min(bic_values)
+best_vars_bic <- setdiff(names(which(summary_exh$which[i_best_bic, ]))[summary_exh$which[i_best_bic, ]], "(Intercept)")
+best_vars_bic <- best_vars_bic[!is.na(best_vars_bic)]
+best_vars_bic_clean <- clean_dummy_names(best_vars_bic, data_cleaned)
+formula_best_bic <- as.formula(paste("Log.Price ~", paste(best_vars_bic_clean, collapse = " + ")))
+leaps.bic <- lm(formula_best_bic, data = data_cleaned)
+```
+
+```{r exhaustive-search-3, warning=FALSE, message=FALSE}
+# EXHAUSTIVE SEARCH 3
+# Using MuMIn::dredge() function
+library(MuMIn)
+global_model <- lm(Log.Price ~ ., data = data_cleaned, na.action = na.pass)
+all_subsets <- dredge(global_model, rank = "AIC", 
+                      extra = c("BIC", "R^2", "adjR^2"))
+```
+
+```{r exhaustive-search-3.5}
+all_subsets <- all_subsets[order(all_subsets$AIC), ]
+MuMIn.aic <- get.models(all_subsets, 1)[[1]]
+all_subsets <- all_subsets[order(all_subsets$BIC), ]
+MuMIn.bic <- get.models(all_subsets, 1)[[1]]
+
+all_subsets$num_vars <- 15 - rowSums(is.na(all_subsets))
+low_BIC_subsets <- subset(all_subsets, BIC <= BIC(MuMIn.bic)+2)
+low_BIC_subsets <- low_BIC_subsets[order(low_BIC_subsets$num_vars), ]
+MuMIn.bic2 <- get.models(low_BIC_subsets, 1)[[1]]
+```
+
+```{r exhaustive-search-summary, warning=FALSE, message=FALSE, include=FALSE}
+library(modelsummary)
+msummary(list(`lmSubsets Exhaustive AIC` = fit.lmSubsets.aic,
+              `leaps Exhaustive AIC` = leaps.aic,
+              `MuMIn Exhaustive AIC` = MuMIn.aic,
+              `lmSubsets Exhaustive BIC` = fit.lmSubsets.bic,
+              `leaps Exhaustive BIC` = leaps.bic,
+              `MuMIn Exhaustive BIC` = MuMIn.bic),
+         coef_omit = c(-1),
+         title = "Exhaustive search summary",
+         fmt = fmt_statistic(rmse = 3))
+```
+
+```{r changeable-unchangeable, include = FALSE}
+# --- Define groups ---
+unchangeable_vars <- c("Log.Lot.Size", "Waterfront", "Log.Age", "Log.Land.Value", "Pct.College")
+changeable_vars   <- c("Living.Area", "Bathrooms", "Bedrooms", "Rooms",
+                       "Central.Air", "New.Construct", "Heat.Type",
+                       "Fuel.Type", "Fireplaces", "Sewer.Type")
+data_U <- data_cleaned[, c("Log.Price", unchangeable_vars)]
+data_C <- data_cleaned[, c("Log.Price", changeable_vars)]
+
+#--- UNCHANGEABLE VARIABLES ---
+m0_U <- lm(Log.Price ~ 1, data = data_U)
+m1_U <- lm(Log.Price ~ ., data = data_U)
+# Forward selection
+step_fwd_U <- step(m0_U, scope = list(lower = m0_U, upper = m1_U),
+                   direction = "forward", trace = FALSE)
+# Backward selection
+step_back_U <- step(m1_U, direction = "backward", trace = FALSE)
+# Stepwise (both)
+step_both_U <- step(m0_U, scope = list(lower = m0_U, upper = m1_U),
+                    direction = "both", trace = FALSE)
+# Compare the models
+msummary(list(`Step fwd` = step_fwd_U,
+              `Step bwd` = step_back_U,
+              `Step both` = step_both_U),
+         title = "Unchangeable models from stepwise selection (AIC)")
+# The 3 models given by stepwise selection are the same
+unchangeable.lm <- step_both_U
+
+# --- CHANGEABLE VARIABLES ---
+m0_C <- lm(Log.Price ~ 1, data = data_C)
+m1_C <- lm(Log.Price ~ ., data = data_C)
+# Forward selection
+step_fwd_C <- step(m0_C, scope = list(lower = m0_C, upper = m1_C),
+                   direction = "forward", trace = FALSE)
+# Backward selection
+step_back_C <- step(m1_C, direction = "backward", trace = FALSE)
+# Stepwise (both)
+step_both_C <- step(m0_C, scope = list(lower = m0_C, upper = m1_C),
+                    direction = "both", trace = FALSE)
+# Compare the models
+msummary(list(`Step fwd` = step_fwd_C,
+              `Step bwd` = step_back_C,
+              `Step both` = step_both_C),
+         title = "Changeable models from stepwise selection (AIC)")
+# The 3 models given by stepwise selection are the same
+changeable.lm <- step_both_C
+```
+
+```{r model-summary, warning=FALSE, message=FALSE, include=FALSE}
+msummary(list(`Exhaustive AIC` = MuMIn.aic,
+              `Step fwd AIC` = step.fwd.aic,
+              `Step bwd AIC` = step.bwd.aic,
+              `Step both AIC` = step.both.aic,
+              `Exhaustive BIC` = MuMIn.bic,
+              `Step fwd BIC` = step.fwd.bic,
+              `Step bwd BIC` = step.bwd.bic,
+              `Step both BIC` = step.both.bic,
+              `Step fwd p-val` = step.fwd.p,
+              `Step bwd p-val` = step.bwd.p,
+              `Step both p-val` = step.both.p,
+              `Additional model` = MuMIn.bic2),
+         output = "kableExtra",
+         escape = FALSE,
+         title = "Model selected using the criterion AIC/BIC/p-value") %>%
+  kable_styling(latex_options = "scale_down", font_size = 8)
+
+print("Model 1: Exhaustive / Step bwd/both AIC")
+print("Model 2: Step fwd AIC")
+print("Model 3: Exhaustive/ Stepwise selection BIC")
+print("Model 4: Model with reasonably low BIC and few predictors")s
+print("Model 5: Step fwd/both p-value")
+print("Model 6: Step bwd p-value")
+print("Model 7: Unchangeable factors")
+print("Model 8: Changeable factors")
+
+e <- msummary(list(`Model 1 (AIC)` = step.both.aic,
+              `Step fwd AIC` = step.fwd.aic,
+              `Model 3 (Lowest BIC)` = step.both.bic,
+              `Model 4 (BIC 2)` = MuMIn.bic2,
+              `Model 5 (p-val)` = step.both.p,
+              `Step bwd p-val` = step.bwd.p,
+              `Unchangeable` = unchangeable.lm,
+              `Changeable` = changeable.lm),
+         title="Unique models",
+         output = "kableExtra",
+         escape = FALSE,
+         fmt = fmt_statistic(r.squared = 4, adj.r.squared = 4, rmse = 4)) %>%
+  kable_styling(latex_options = "scale_down", font_size = 12)
+
+save_kable(e, file = "unique1.png")
+```
+
 The final model-building process used forward, backward, and stepwise selection under AIC. All approaches achieved similar explanatory power (adjusted $R^2 \approx 0.59$). Backward and Stepwise method converged to the same model with a lower AIC of 635.2 compared to Forward with 638.4. This backward/stepwise was therefore chosen as our final model as it offers a slightly stronger explanatory ability without overfitting. It has 9 predictor variables: Waterfront, New.Construct, Central.Air, Fuel.Type.Gas, Fuel.Type.Wood, Living.Area, Bathrooms, Log.Age, Log.Land.Value.
 
 ## Results
+
+```{r k-fold cross validation, warning=FALSE, message=FALSE, include=FALSE}
+library(caret)
+
+cv_metrics <- function(form, data, v) {
+  cv = train(form, data,
+             method = "lm",
+             trControl = trainControl(
+               method = "cv", number = v,
+               verboseIter = FALSE
+              )
+  )
+  metrics_df = cv$results
+  tibble(RMSE = metrics_df$RMSE, MAE = metrics_df$MAE, Rsquared = metrics_df$Rsquared)
+}
+
+results_tbl <- map2_dfr(models, model_names, function(mod, mod_name) {
+  # extract formula
+  f <- formula(mod)
+  
+  # run 10-fold CV on data_cleaned
+  metrics <- cv_metrics(f, data = data_cleaned, v = 5)
+  
+  tibble(Model = mod_name, RMSE = metrics$RMSE, 
+         MAE = metrics$MAE, Rsquared = metrics$Rsquared)
+})
+
+results_tbl  %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
+  kable(col.names = c("Model", "RMSE", "MAE", "Rsquared"), align = "lcc",
+        caption = "5-fold cross validation") %>%
+  kable_classic(full_width = FALSE)
+```
+
+```{r final-model-selection}
+final.model <- MuMIn.bic2
+```
 
 ## Discussion and conclusion
 

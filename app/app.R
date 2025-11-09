@@ -37,7 +37,6 @@ final_model <- lm(formula = Log.Price ~ Bathrooms + Heat.Type + Living.Area +
                     Log.Age + Log.Land.Value + New.Construct + Waterfront,
                   data = data_cleaned)
 
-
 # Define UI for application that draws a histogram
 ui <- fluidPage(
 
