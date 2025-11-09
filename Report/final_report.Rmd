@@ -434,6 +434,58 @@ results_tbl  %>%
 final.model <- MuMIn.bic2
 ```
 
+###Assumption checking
+
+The independence assumption is not satisfied. Firstly, there could be spatial correlation between the houses. The value of nearby homes is interconnected because they share unmeasured characteristics, such as poverty level and local amenities. Secondly, the dataset was extracted from housing sales data within the 2001 - 2006 period, which contains repeat sales of the same houses. Even when the dataset we used for the linear regression model only contains data from 2006, it could still be repeat sales, which are not independent from each other.
+
+```{r assumption-checking}
+autoplot(final.model, which = 1:2)
+```
+
+The residuals are relatively randomly scattered around the zero lines, i.e. there is no pattern. Hence, the linearity assumption is satisfied.
+
+The spread of residuals looks reasonably constant over the range of fitted log price values. Hence, the homoscedasticity assumption for the residuals is satisfied.
+
+In the Q-Q plot of residuals, points at the tails deviate from the diagonal line. However, with a large sample size (n = 1684), the Central Limit Theorem ensures that the coefficient estimates’ sampling distribution is approximately normal, so inference remains valid.
+
+```{r fig.height=3, fig.width=3}
+library(corrplot)
+continuous_vars <- c("Living.Area", "Log.Land.Value", "Bathrooms", "Log.Age") # Fwd
+numeric_data <- data_cleaned[, (names(data_cleaned) %in% continuous_vars)]
+cor_mat = cor(numeric_data)
+
+cor.mtest <- function(mat, ...) {
+    mat <- as.matrix(mat)
+    n <- ncol(mat)
+    p.mat<- matrix(NA, n, n)
+    diag(p.mat) <- 0
+    for (i in 1:(n - 1)) {
+        for (j in (i + 1):n) {
+            tmp <- cor.test(mat[, i], mat[, j], ...)
+            p.mat[i, j] <- p.mat[j, i] <- tmp$p.value
+        }
+    }
+  colnames(p.mat) <- rownames(p.mat) <- colnames(mat)
+  p.mat
+}
+
+# matrix of the p-value of the correlation
+p.mat <- cor.mtest(numeric_data)
+
+corrplot(cor_mat, method="color", 
+         # col=col(200),  
+         type="upper",
+         order="hclust",
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         # Combine with significance
+         p.mat = p.mat, sig.level = 0.05, insig = "blank", 
+         # hide correlation coefficient on the principal diagonal
+         diag=FALSE 
+         )
+```
+There is no multicollinearity as no pair of predictors are highly correlated (i.e., having |r| > 0.8).
+
 ## 5 Discussion
 ### 5.1 Coefficients
 The regression model indicates that both changeable and immutable housing attributes influence price, though changeable factors have stronger predictive power. Figure 4 summarises the impact of each variable in practical units. For example, the presence of a waterfront is associated with a 76% increase in housing price. For log-transformed variables, the changes are expressed by percent, such as Land Value increase of 10% being associated with a 1.18% increase on price. The model intercept (10.2), exponentially transformed to produce price baseline $28,750, represents the expected housing price when all predictive variables are at default value.  
