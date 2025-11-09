@@ -376,6 +376,17 @@ We applied a combination of stepwise selection (AIC, BIC, and p-value–based cr
 
 Among all models evaluated, Model 4 (BIC 2) was chosen as our final model - done through exhaustive search using MuMIn package under BIC. While Model 3 provided the lowest BIC with 9 predictors, however the difference was negligible to Model 4 which only uses 7 predictors. Both models achieved almost identical explanatory power at $R^2 = 0.5853$, but Model 4 provides us with a simpler and more interpretable model without compromising accuracy.
 
+Model stability analysis confirms this decision, with the two variables (Lot.Log.Size and Central.Air) excluded from model 3 showing some of the lowest bootstrap probabilities among the 9 variables, with a significant gap between these two variables and the rest (excluding the categorical variable Heat.Type). While the model stability plot does not fully confirm this due to Heat.Type, the 6 other variables are selected 50% of the time at 7 parameter level.
+
+```{r, warning=FALSE, message=FALSE, include=FALSE}
+load("modelStabReport.RData")
+```
+
+```{r}
+plot(vis.M1, which = "vip", interactive = FALSE)
+plot(vis.M1, which = "boot", interactive = FALSE)
+```
+
 ## Results
 
 ```{r k-fold cross validation, warning=FALSE, message=FALSE, include=TRUE}
