@@ -434,5 +434,49 @@ results_tbl  %>%
 final.model <- MuMIn.bic2
 ```
 
-## Discussion and conclusion
+## 5 Discussion
+### 5.1 Coefficients
+The regression model indicates that both changeable and immutable housing attributes influence price, though changeable factors have stronger predictive power. Figure 4 summarises the impact of each variable in practical units. For example, the presence of a waterfront is associated with a 76% increase in housing price. For log-transformed variables, the changes are expressed by percent, such as Land Value increase of 10% being associated with a 1.18% increase on price. The model intercept (10.2), exponentially transformed to produce price baseline $28,750, represents the expected housing price when all predictive variables are at default value.  
+
+```{r}
+library(tibble)
+library(gt)
+
+effects <- tribble(
+~Variable,           ~`Change in unit`, ~`Impact on price (%)`,
+"Bathrooms",         "+1",              "+10.26%",
+"Living area",       "+100 sq ft",      "+2.89%",
+"Land value",        "+10%",            "+1.18%",
+"Waterfront",        "Yes",             "+76.03%",
+"Heat: Hot Air",     "Yes",             "+9.39%",
+"Heat: Hot Water",   "Yes",             "+7.41%",
+"Heat: None",        "Yes",             "-39.32%",
+"Age",               "+10%",            "-0.57%",
+"New construction",  "Yes",             "-25.72%"
+)
+
+gt(effects)
+
+```
+
+Changeable variables - living area, bathrooms, heating type, and new construction - help *homeowners* select renovations that optimise housing price, alongside practical considerations such as construction costs and regulations. For example, approximately 350 sq ft of added living area has a similar effect on price as adding an extra bathroom or switching to hot-air heating.
+
+Immutable attributes - waterfront location, land value, and age - enable *prospective buyers/sellers* to make informed investment decisions and assess whether a property is fairly priced. The complete model sets realistic expectations that renovation is not the sole driver of value, and even homeowners with favourable fixed housing attributes should not be complacent.
+
+### 5.2 Limitations
+The model's representativeness is limited as the data was recorded in 2006, immediately prior to the Global Financial Crisis (2007-2009). This heavily disrupted the housing market (see Figure 5) and irrational pricing trends may emerge that do not reflect 2025 conditions. Moreover, the data originates from Saratoga, a suburban area of New York, and may not generalise to urban or highly metropolitan areas of New York State, such as New York City.
+
+The risk of overfitting was mitigated through k-fold cross validation, which was appropriate as the model was not overly complex and had sufficient entries. Residual risk of minor overfitting remains. 
+
+Independence is not met, as discussed in the Assumption section. 
+
+<img src="https://lh3.googleusercontent.com/proxy/XMJ6hvlvaUW5ogMkMWKEoj7q42L4P8Z2MCYOvtkOROAYGaSDgxX0G1qIRDyGYK-PP0XoGNa9cU7246N9KyhhXIm4CO3WRcTu_Rc" style="width:100%; display:block; margin:0 auto;">
+
+
+### 5.3 Future Work
+We seek to acquire more recent data, with zip code location and time series stamps, and additional variables such as proximity to schools and crime rates. This would enhance the model's predictive power and accuracy, supporting the creation of interactive geographic visualisations that improve accessibility for non-technical users.
+
+
+## 6 Conclusion
+This report employs a log-transformed regression model to analyse how changeable and immutable housing attributes impact housing price in Saratoga. While changeable variables have the strongest predictive power, unchangeable variables such as Waterfront remain significant. These findings support more informed rennovation, investment and price valuation decisions by homeowners, buyers and sellers.
 
