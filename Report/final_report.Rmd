@@ -70,6 +70,8 @@ data <- data %>%
 ```
 
 ## Abstract
+This report employs a log-transformed multiple regression model to examine how changeable and immutable attributes influence housing price. Analysis of 1,734 residential properties in Saratoga County, New York indicated that changeable variables possess stronger predictive power, with additional bathrooms, increased living area, and modern heating systems significantly increasing price, while fixed features such as Waterfront remains the largest single determinant of housing price. Regression techniques including stepwise selection, AIC and BIC criteria, model stability analysis and k-fold cross validation were utilised. The results provide practical guidance for homeowners seeking to maximise housing price through renovations, and for prospective buyers and sellers to make accurate price valuations and informed investment decisions.
+
 ## Introduction
 
 ## Dataset
@@ -500,7 +502,7 @@ corrplot(cor_mat, method="color",
          )
 ```
 
-```{r vif, warning=}
+```{r vif, warning=FALSE}
 library(car)
 vif(final.model)%>%
   kable(col.names = c("GVIF", "Df", "Adjusted GVIF (=~ VIF)"), align = "lccc",
@@ -519,16 +521,16 @@ library(tibble)
 library(gt)
 
 effects <- tribble(
-~Variable,           ~`Change in unit`, ~`Impact on price (%)`,
-"Bathrooms",         "+1",              "+10.26%",
-"Living area",       "+100 sq ft",      "+2.89%",
-"Land value",        "+10%",            "+1.18%",
-"Waterfront",        "Yes",             "+76.03%",
-"Heat: Hot Air",     "Yes",             "+9.39%",
-"Heat: Hot Water",   "Yes",             "+7.41%",
-"Heat: None",        "Yes",             "-39.32%",
-"Age",               "+10%",            "-0.57%",
-"New construction",  "Yes",             "-25.72%"
+  ~Variable,           ~`Change in unit`, ~`Impact on price (%)`,
+  "Bathrooms",         "+1",              "+10.42%",
+  "Heat: Hot Air",     "Yes",             "+9.83%",
+  "Heat: Hot Water",   "Yes",             "+7.69%",
+  "Heat: None",        "Yes",             "-32.49%",
+  "Living area",       "+100 sq ft",      "+3.00%",
+  "Age",               "+10%",            "-0.57%",
+  "Land value",        "+10%",            "+1.25%",
+  "New construction",  "Yes",             "-22.68%",
+  "Waterfront",        "Yes",             "+74.85%"
 )
 
 gt(effects)
