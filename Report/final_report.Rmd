@@ -357,7 +357,7 @@ print("Model 6: Step bwd p-value")
 print("Model 7: Unchangeable factors")
 print("Model 8: Changeable factors")
 
-e <- msummary(list(`Model 1 (AIC)` = step.both.aic,
+msummary(list(`Model 1 (AIC)` = step.both.aic,
               `Step fwd AIC` = step.fwd.aic,
               `Model 3 (Lowest BIC)` = step.both.bic,
               `Model 4 (BIC 2)` = MuMIn.bic2,
@@ -370,8 +370,6 @@ e <- msummary(list(`Model 1 (AIC)` = step.both.aic,
          escape = FALSE,
          fmt = fmt_statistic(r.squared = 4, adj.r.squared = 4, rmse = 4)) %>%
   kable_styling(latex_options = "scale_down", font_size = 12)
-
-save_kable(e, file = "unique1.png")
 ```
 
 We applied a combination of stepwise selection (AIC, BIC, and p-value–based criteria) and exhaustive search techniques ( lmSubsets, leaps, and MuMIn). Stepwise selection was performed in forward, backward, and both directions. To further confirm these results, we conducted three exhaustive search techniques under both AIC and BIC criteria. This approach provides a comprehensive way to select our final model.
@@ -454,7 +452,7 @@ The spread of residuals looks reasonably constant over the range of fitted log p
 
 In the Q-Q plot of residuals, points at the tails deviate from the diagonal line. However, with a large sample size (n = 1684), the Central Limit Theorem ensures that the coefficient estimates’ sampling distribution is approximately normal, so inference remains valid.
 
-```{r fig.height=3, fig.width=3}
+```{r cor-mat, fig.height=3, fig.width=3}
 library(corrplot)
 continuous_vars <- c("Living.Area", "Log.Land.Value", "Bathrooms", "Log.Age") # Fwd
 numeric_data <- data_cleaned[, (names(data_cleaned) %in% continuous_vars)]
@@ -490,6 +488,15 @@ corrplot(cor_mat, method="color",
          diag=FALSE 
          )
 ```
+
+```{r vif, warning=}
+library(car)
+vif(final.model)%>%
+  kable(col.names = c("GVIF", "Df", "Adjusted GVIF (=~ VIF)"), align = "lccc",
+        caption = "VIF values") %>%
+  kable_classic(full_width = FALSE)
+```
+
 There is no multicollinearity as no pair of predictors are highly correlated (i.e., having |r| > 0.8).
 
 ## 5 Discussion
