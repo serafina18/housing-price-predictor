@@ -254,8 +254,9 @@ MuMIn.aic <- get.models(all_subsets, 1)[[1]]
 all_subsets <- all_subsets[order(all_subsets$BIC), ]
 MuMIn.bic <- get.models(all_subsets, 1)[[1]]
 
+all_subsets$num_vars <- 15 - rowSums(is.na(all_subsets))
 low_BIC_subsets <- subset(all_subsets, BIC <= BIC(MuMIn.bic)+2)
-low_BIC_subsets <- low_BIC_subsets[order(low_BIC_subsets$df), ]
+low_BIC_subsets <- low_BIC_subsets[order(low_BIC_subsets$num_vars), ]
 MuMIn.bic2 <- get.models(low_BIC_subsets, 1)[[1]]
 ```
 
@@ -368,9 +369,43 @@ The final model-building process used forward, backward, and stepwise selection 
 
 ## Results
 
-```{r}
-# PERFORMANCE TESTS
+```{r k-fold cross validation, warning=FALSE, message=FALSE, include=FALSE}
+library(caret)
+
+cv_metrics <- function(form, data, v) {
+  cv = train(form, data,
+             method = "lm",
+             trControl = trainControl(
+               method = "cv", number = v,
+               verboseIter = FALSE
+              )
+  )
+  metrics_df = cv$results
+  tibble(RMSE = metrics_df$RMSE, MAE = metrics_df$MAE, Rsquared = metrics_df$Rsquared)
+}
+
+results_tbl <- map2_dfr(models, model_names, function(mod, mod_name) {
+  # extract formula
+  f <- formula(mod)
+  
+  # run 10-fold CV on data_cleaned
+  metrics <- cv_metrics(f, data = data_cleaned, v = 10)
+  
+  tibble(Model = mod_name, RMSE = metrics$RMSE, 
+         MAE = metrics$MAE, Rsquared = metrics$Rsquared)
+})
+
+results_tbl  %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
+  kable(col.names = c("Model", "RMSE", "MAE", "Rsquared"), align = "lcc",
+        caption = "10-fold cross validation") %>%
+  kable_classic(full_width = FALSE)
 ```
+
+```{r final-model-selection}
+final.model <- MuMIn.bic2
+```
+
 
 ## Discussion and conclusion
 
