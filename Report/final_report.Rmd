@@ -3,6 +3,7 @@ title: 'Executive Summary: What Really Drives House Prices? Comparing Unchangeab
   and Changeable Factors in New York State'
 author: Group L91G03 — Anne Do, Arielle Melamed, Serafina Aurelia, Eric Lee, Haresh
   Kumararajah
+  
 output:
   pdf_document:
     number_sections: false
@@ -26,6 +27,11 @@ header-includes:
 - \AtBeginEnvironment{quote}{\small}
 linkcolor: black
 urlcolor: blue
+
+bibliography: [refs/references.bib, refs/packages.bib]
+csl: refs/apa.csl
+nocite: |
+  @*
 ---
 
 ```{r setup, include=FALSE}
@@ -436,7 +442,7 @@ final.model <- MuMIn.bic2
 
 ###Assumption checking
 
-The independence assumption is not satisfied. Firstly, there could be spatial correlation between the houses. The value of nearby homes is interconnected because they share unmeasured characteristics, such as poverty level and local amenities. Secondly, the dataset was extracted from housing sales data within the 2001 - 2006 period, which contains repeat sales of the same houses. Even when the dataset we used for the linear regression model only contains data from 2006, it could still be repeat sales, which are not independent from each other.
+The independence assumption is not satisfied. Firstly, there could be spatial correlation between the houses. The value of nearby homes is interconnected because they share unmeasured characteristics, such as poverty level and local amenities. Secondly, the dataset was extracted from housing sales data within the 2001 - 2006 period, which contains repeat sales of the same houses [@corvetti_2007]. Even when the dataset we used for the linear regression model only contains data from 2006, it could still be repeat sales, which are not independent from each other.
 
 ```{r assumption-checking}
 autoplot(final.model, which = 1:2)
@@ -531,4 +537,11 @@ We seek to acquire more recent data, with zip code location and time series stam
 
 ## 6 Conclusion
 This report employs a log-transformed regression model to analyse how changeable and immutable housing attributes impact housing price in Saratoga. While changeable variables have the strongest predictive power, unchangeable variables such as Waterfront remain significant. These findings support more informed rennovation, investment and price valuation decisions by homeowners, buyers and sellers.
+
+```{r}
+# creates a file with the bibtex for packages used:
+knitr::write_bib(c(.packages(), "knitr", "rmarkdown"),
+                 "refs/packages.bib")
+# extra bibliography for manually added references bibliography.bibtex
+```
 
