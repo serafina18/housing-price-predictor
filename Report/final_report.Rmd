@@ -69,17 +69,17 @@ data <- data %>%
   )
 ```
 
-## Abstract
-This report employs a log-transformed multiple regression model to examine how changeable and immutable attributes influence housing price. Analysis of 1,734 residential properties in Saratoga County, New York indicated that changeable variables possess stronger predictive power, with additional bathrooms, increased living area, and modern heating systems significantly increasing price, while fixed features such as Waterfront remains the largest single determinant of housing price. Regression techniques including stepwise selection, AIC and BIC criteria, model stability analysis and k-fold cross validation were utilised. The results provide practical guidance for homeowners seeking to maximise housing price through renovations, and for prospective buyers and sellers to make accurate price valuations and informed investment decisions.
+## 1 Abstract
+This report employs a log-transformed multiple regression model to examine how changeable and immutable attributes influence housing price. Analysis of 1,734 residential properties in Saratoga County, New York indicated that changeable variables possess stronger predictive power, with additional bathrooms, increased living area, and modern heating systems significantly increasing price, while fixed features such as Waterfront has the greatest individual impact on housing price. Regression techniques including stepwise selection, AIC and BIC criteria, model stability analysis and k-fold cross validation were utilised. The results provide practical guidance for homeowners seeking to maximise housing price through renovations, and for prospective buyers and sellers to make accurate price valuations and informed investment decisions.
 
-## Introduction
+## 2 Introduction
 
-## Dataset
+## 3 Dataset
 The dataset used in this study is the 2006 Saratoga Housing Data, which contains 1,734 observations and 17 variables ranging over various housing characteristics.The data were originally collected to answer the case study question: "How much is a fireplace worth?"
 
 The dependent variable is Price of each house. The data contain no missing values and include the dependent variable, Price, alongside predictor variables such as Lot Size, Living Area, Land Value, Age, Waterfront, New.Construct, Central.Air, Fuel.Type, and others.
 
-## Analysis
+## 4 Analysis
 ```{r}
 # Clean
 data_cleaned <- data %>%
@@ -100,7 +100,7 @@ A multiple linear regression model was used to review how property characteristi
 
 As part of the initial data exploration, variables were grouped into unchangeable (e.g., Lot.Size, Waterfront, Age, Land.Value, Pct.College) and changeable factors (e.g., Living.Area, Bathrooms, Bedrooms, Central.Air, Fireplaces, New.Construct, Fuel.Type). We performed stepwise selection within each group to assess significance, and found that 38% of the housing price variation is explained by unchangeable factors $(R^2 = 0.38)$ while 55% are of changeable factors $(R^2 = 0.55)$.
 
-A comparison of in-sample model performance indicates that living area is the most significant individual predictor, accounting for 46.7% of the variation in property prices with an R² of 0.467, followed by bathrooms with an R² of 0.341, though it remains less influential than Living Area. The full model, which incorporates all our selected predictors, shows an R² of 0.587 and the lowest AIC value of 653.282, showing that it does in fact perform better than any single predictor. After categorized into changeable and unchangeable variables, the model with changeable variables with R² of 0.502 outperforms the model with unchangeable variables with R² of 0.330, suggesting that adaptable property features more significantly contribute to explaining price variability.
+A comparison of in-sample model performance indicates that living area is the most significant individual predictor, accounting for 46.7% of the variation in property prices with an R² of 0.467, followed by bathrooms with an R² of 0.341, though it remains less influential than Living Area. The full model, which incorporates all our selected predictors, shows an R² of 0.587 and the lowest AIC value of 653.282, showing that it does in fact perform better than any single predictor. After categorised into changeable and unchangeable variables, the model with changeable variables with R² of 0.502 outperforms the model with unchangeable variables with R² of 0.330, suggesting that adaptable property features more significantly contribute to explaining price variability.
 
 ```{r}
 # --- STEPWISE SELECTION ON FULL MODEL ---
@@ -391,7 +391,7 @@ plot(vis.M1, which = "vip", interactive = FALSE)
 plot(vis.M1, which = "boot", interactive = FALSE)
 ```
 
-## Results
+## 5 Results
 
 ```{r k-fold cross validation, warning=FALSE, message=FALSE, include=TRUE}
 library(caret)
@@ -453,7 +453,7 @@ results_tbl  %>%
 final.model <- MuMIn.bic2
 ```
 
-###Assumption checking
+### 5.1 Assumption checking
 
 The independence assumption is not satisfied. Firstly, there could be spatial correlation between the houses. The value of nearby homes is interconnected because they share unmeasured characteristics, such as poverty level and local amenities. Secondly, the dataset was extracted from housing sales data within the 2001 - 2006 period, which contains repeat sales of the same houses [@corvetti_2007]. Even when the dataset we used for the linear regression model only contains data from 2006, it could still be repeat sales, which are not independent from each other.
 
@@ -514,8 +514,8 @@ vif(final.model)%>%
 
 There is no multicollinearity as no pair of predictors are highly correlated (i.e., having |r| > 0.8).
 
-## 5 Discussion
-### 5.1 Coefficients
+## 6 Discussion
+### 6.1 Coefficients
 The regression model indicates that both changeable and immutable housing attributes influence price, though changeable factors have stronger predictive power. Figure 4 summarises the impact of each variable in practical units. For example, the presence of a waterfront is associated with a 76% increase in housing price. For log-transformed variables, the changes are expressed by percent, such as Land Value increase of 10% being associated with a 1.18% increase on price. The model intercept (10.2), exponentially transformed to produce price baseline $28,750, represents the expected housing price when all predictive variables are at default value.  
 
 ```{r}
@@ -543,7 +543,7 @@ Changeable variables - living area, bathrooms, heating type, and new constructio
 
 Immutable attributes - waterfront location, land value, and age - enable *prospective buyers/sellers* to make informed investment decisions and assess whether a property is fairly priced. The complete model sets realistic expectations that renovation is not the sole driver of value, and even homeowners with favourable fixed housing attributes should not be complacent.
 
-### 5.2 Limitations
+### 6.2 Limitations
 The model's representativeness is limited as the data was recorded in 2006, immediately prior to the Global Financial Crisis (2007-2009). This heavily disrupted the housing market (see Figure 5) and irrational pricing trends may emerge that do not reflect 2025 conditions. Moreover, the data originates from Saratoga, a suburban area of New York, and may not generalise to urban or highly metropolitan areas of New York State, such as New York City.
 
 The risk of overfitting was mitigated through k-fold cross validation, which was appropriate as the model was not overly complex and had sufficient entries. Residual risk of minor overfitting remains. 
@@ -553,11 +553,11 @@ Independence is not met, as discussed in the Assumption section.
 <img src="https://lh3.googleusercontent.com/proxy/XMJ6hvlvaUW5ogMkMWKEoj7q42L4P8Z2MCYOvtkOROAYGaSDgxX0G1qIRDyGYK-PP0XoGNa9cU7246N9KyhhXIm4CO3WRcTu_Rc" style="width:100%; display:block; margin:0 auto;">
 
 
-### 5.3 Future Work
+### 6.3 Future Work
 We seek to acquire more recent data, with zip code location and time series stamps, and additional variables such as proximity to schools and crime rates. This would enhance the model's predictive power and accuracy, supporting the creation of interactive geographic visualisations that improve accessibility for non-technical users.
 
 
-## 6 Conclusion
+## 7 Conclusion
 This report employs a log-transformed regression model to analyse how changeable and immutable housing attributes impact housing price in Saratoga. While changeable variables have the strongest predictive power, unchangeable variables such as Waterfront remain significant. These findings support more informed rennovation, investment and price valuation decisions by homeowners, buyers and sellers.
 
 ```{r}
