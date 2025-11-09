@@ -359,7 +359,7 @@ save(vis.step.bt.aic, vis.step.fwd.aic, vis.step.both.bic, vis.bic.2, vis.both.p
 ```
 
 ```{r}
-##LOADING BACK THE FILES
+##LOADING BACK THE FILES HERE
 load("modelStabReport.RData")
 ```
 
