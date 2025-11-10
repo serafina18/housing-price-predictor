@@ -5,6 +5,8 @@ library(plotly)
 library(equatiomatic)
 library(bslib)
 library(thematic)
+library(gt)
+library(mplot)
 
 data <- read.delim(
   "housing-prices-ge19.txt",
@@ -35,14 +37,14 @@ data_cleaned <- data_cleaned %>%
     Log.Age = ifelse(Age != 0, log(Age), 0),
     Log.Land.Value = log(Land.Value)
   ) %>%
-  select(-Price, -Lot.Size, -Age, -Land.Value, -Test)
+  select(-Test)
 
 # Final model
 final_model <- lm(formula = Log.Price ~ Bathrooms + Heat.Type + Living.Area + 
                     Log.Age + Log.Land.Value + New.Construct + Waterfront,
                   data = data_cleaned)
 
-load("../Report/modelStabReport.RData")
+load("modelStabReport.RData")
 
 # UI
 ui <- dashboardPage(
@@ -60,6 +62,7 @@ ui <- dashboardPage(
   
       tabItem(tabName = "about",
               h2("About the study"),
+              fluidRow(
               box(title = "Purpose", status = "primary", solidHeader = TRUE, width=4,
                   tags$p("This app employs a log-transformed multiple regression model to examine how changeable and fixed housing attributes influence property price in Saratoga, New York."),
                   tags$p("The results provide practical guidance for homeowners seeking to maximise housing price through renovations, and for prospective buyers and sellers to make accurate price valuations and informed investment decisions."),
@@ -79,12 +82,10 @@ ui <- dashboardPage(
                     tags$li("Predict Housing Price: predicts housing price using user inputs for the variables in the Selected Model. The prediction interval and confidence interval is outputted, to a level of the user’s choice.")
                     )),
               box(title = "Data Cleaning", status = "warning", solidHeader = TRUE, width=12,
-                  tags$p("The dataset used in this study is a random sample of 1,734 observations from the Saratoga Housing Data (De Veaux), with 17 variables."),
-                  tags$p("The data contains the dependent variable ‘Price’ for each house and predictor variables such as Lot Size, Living Area, Waterfront, and Heat Type."),
                   tags$p("The data contained no missing values. Invalid and inconsistent entries were filtered out, including where Lot Size value was 0, and where Age was 0 while New Construction Status was False. Certain numeric variables such as Heat Type were also converted into categorical data."),
                   tags$p("Log transformation was applied for variables demonstrating positive skew, with most observations cluttered around the lower end. This included the variable Price (visualised in the histogram below) and predictors such as Lot Size, Age, and Land Value. These variables were transformed to stabilise variance and satisfy normality assumptions."),
                   plotOutput("histogram", height = "350px")
-              )),
+              ))),
       
       tabItem(tabName = "model",
               h2("Selected Model"),
@@ -106,21 +107,27 @@ ui <- dashboardPage(
               h2(" Prediction"),
               fluidRow(
                 box(title = "Input Variables", status = "primary", solidHeader = TRUE, width = 4,
-                    sliderInput("bathrooms", "Number of bathrooms (half bathroom represents no shower or bathtub):", value = 2, min = 0, max = 7, step = 0.5),
+                    sliderInput("bathrooms", "Number of bathrooms (half bathroom represents no shower or bathtub):", value = 2, min = 0, max = 4.5, step = 0.5),
                     selectInput("heat_type", "Heating system:", choices = c("Electric", "Hot Air", "Hot Water", "None")),
-                    numericInput("living_area", "Living area (sq ft):", value = 1610, min = 1),
+                    #numericInput("living_area", "Living area (sq ft):", value = 1610, min = 1),
+                    sliderInput("living_area", "Living area (sq ft):", value = 1610, min = 616, max = 5228, step = 1),
                     sliderInput("age", "Age (years):", value = 19, min = 0, max=225),
-                    numericInput("land_value", "Land value ($USD):", value = 25000, min = 1),
+                    #numericInput("land_value", "Land value ($USD):", value = 25000, min = 1),
+                    sliderInput("land_value", "Land value ($USD):", value = 25000, min = 200, max = 255000, step = 1),
                     checkboxInput("new_construct", "New construction?"),
                     checkboxInput("waterfront", "Has waterfront?"),
-                    selectInput("confidence", "Tolerance/ Confidence level for intervals:", choices = c("0.90", "0.95", "0.99"))
+                    #selectInput("conf_lvl", "Confidence level for intervals:", choices = c("0.90", "0.95", "0.99"))
+                ),
+                box(title = "Prediction", status = "primary", solidHeader = TRUE, width = 4,
+                    sliderInput("conf_lvl", "Confidence level for intervals:", value = 0.9, min = 0, max = 0.99, step = 0.01),
+                    checkboxInput("extrapolation", "Allow extrapolation/ extreme value?")
                 ),
                 box(title = "Model", status = "danger", solidHeader = TRUE, width = 8,
                     withMathJax(),
                     uiOutput("formula2")),
                 box(title = "Prediction", status = "warning", solidHeader = TRUE, width = 8,
                     withMathJax(),
-                    uiOutput("prediction"),
+                    uiOutput("prediction_val"),
                     uiOutput("ci"),
                     uiOutput("pi")
                 )
@@ -215,14 +222,14 @@ server <- function(input, output) {
   })
   
   predict_pi <- reactive({
-    as.data.frame(predict(final_model, new_obs(), interval = "prediction", level = as.numeric(input$confidence)))
+    as.data.frame(predict(final_model, new_obs(), interval = "prediction", level = as.numeric(input$conf_lvl)))
   })
   
   predict_ci <- reactive({
-    as.data.frame(predict(final_model, new_obs(), interval = "confidence", level = as.numeric(input$confidence)))
+    as.data.frame(predict(final_model, new_obs(), interval = "confidence", level = as.numeric(input$conf_lvl)))
   })
   
-  output$prediction <- renderUI({
+  output$prediction_val <- renderUI({
     pred_val <- round(exp(predict_pi()$fit), 0) 
     HTML(paste0(
       "<h2 style='color:#2c3e50; font-weight:bold; text-align:center;'>
@@ -236,7 +243,7 @@ server <- function(input, output) {
     ci_upper <- round(exp(predict_ci()$upr), 0)
     HTML(paste0(
       "<p style='font-size:16px; text-align:center;'>
-      <b>95% Confidence Interval:</b><br>
+      <b>", input$conf_lvl*100, "% Confidence Interval:</b><br>
       $", format(ci_lower, big.mark=","), " – $", format(ci_upper, big.mark=","),
       "</p>"
     ))
@@ -247,7 +254,7 @@ server <- function(input, output) {
     pi_upper <- round(exp(predict_pi()$upr), 0)
     HTML(paste0(
       "<p style='font-size:16px; text-align:center;'>
-      <b>95% Prediction Interval:</b><br>
+      <b>", input$conf_lvl*100, "% Prediction Interval:</b><br>
       $", format(pi_lower, big.mark=","), " – $", format(pi_upper, big.mark=","),
       "</p>"
     ))
