@@ -69,15 +69,17 @@ data <- data %>%
   )
 ```
 
-## Abstract
-## Introduction
+## 1 Abstract
+This report employs a log-transformed multiple regression model to examine how changeable and immutable attributes influence housing price. Analysis of 1,734 residential properties in Saratoga County, New York indicated that changeable variables possess stronger predictive power, with additional bathrooms, increased living area, and modern heating systems significantly increasing price, while fixed features such as Waterfront has the greatest individual impact on housing price. Regression techniques including stepwise selection, AIC and BIC criteria, model stability analysis and k-fold cross validation were utilised. The results provide practical guidance for homeowners seeking to maximise housing price through renovations, and for prospective buyers and sellers to make accurate price valuations and informed investment decisions.
 
-## Dataset
+## 2 Introduction
+
+## 3 Dataset
 The dataset used in this study is the 2006 Saratoga Housing Data, which contains 1,734 observations and 17 variables ranging over various housing characteristics.The data were originally collected to answer the case study question: "How much is a fireplace worth?"
 
 The dependent variable is Price of each house. The data contain no missing values and include the dependent variable, Price, alongside predictor variables such as Lot Size, Living Area, Land Value, Age, Waterfront, New.Construct, Central.Air, Fuel.Type, and others.
 
-## Analysis
+## 4 Analysis
 ```{r}
 # Clean
 data_cleaned <- data %>%
@@ -97,6 +99,8 @@ data_cleaned <- data_cleaned %>%
 A multiple linear regression model was used to review how property characteristics influence Log(Price). Prior to building our model, basic data cleaning was done to remove invalid and inconsistent entries such as Lot.Size = 0 or Age = 0 with New.Construct = 0. All categorical variables are also encoded into factors. Finally, log transformations were applied to skewed variables (Price, Lot.Size, Age, Land.Value) to stabilize variance and improve normality. 
 
 As part of the initial data exploration, variables were grouped into unchangeable (e.g., Lot.Size, Waterfront, Age, Land.Value, Pct.College) and changeable factors (e.g., Living.Area, Bathrooms, Bedrooms, Central.Air, Fireplaces, New.Construct, Fuel.Type). We performed stepwise selection within each group to assess significance, and found that 38% of the housing price variation is explained by unchangeable factors $(R^2 = 0.38)$ while 55% are of changeable factors $(R^2 = 0.55)$.
+
+A comparison of in-sample model performance indicates that living area is the most significant individual predictor, accounting for 46.7% of the variation in property prices with an R² of 0.467, followed by bathrooms with an R² of 0.341, though it remains less influential than Living Area. The full model, which incorporates all our selected predictors, shows an R² of 0.587 and the lowest AIC value of 653.282, showing that it does in fact perform better than any single predictor. After categorised into changeable and unchangeable variables, the model with changeable variables with R² of 0.502 outperforms the model with unchangeable variables with R² of 0.330, suggesting that adaptable property features more significantly contribute to explaining price variability.
 
 ```{r}
 # --- STEPWISE SELECTION ON FULL MODEL ---
@@ -249,9 +253,7 @@ leaps.bic <- lm(formula_best_bic, data = data_cleaned)
 # EXHAUSTIVE SEARCH 3
 # Using MuMIn::dredge() function
 library(MuMIn)
-global_model <- lm(Log.Price ~ ., data = data_cleaned, na.action = na.pass)
-all_subsets <- dredge(global_model, rank = "AIC", 
-                      extra = c("BIC", "R^2", "adjR^2"))
+load("exhaustiveSearch3.RData")
 ```
 
 ```{r exhaustive-search-3.5}
@@ -376,7 +378,18 @@ We applied a combination of stepwise selection (AIC, BIC, and p-value–based cr
 
 Among all models evaluated, Model 4 (BIC 2) was chosen as our final model - done through exhaustive search using MuMIn package under BIC. While Model 3 provided the lowest BIC with 9 predictors, however the difference was negligible to Model 4 which only uses 7 predictors. Both models achieved almost identical explanatory power at $R^2 = 0.5853$, but Model 4 provides us with a simpler and more interpretable model without compromising accuracy.
 
-## Results
+Model stability analysis confirms this decision, with the two variables (Lot.Log.Size and Central.Air) excluded from model 3 showing some of the lowest bootstrap probabilities among the 9 variables, with a significant gap between these two variables and the rest (excluding the categorical variable Heat.Type). While the model stability plot does not fully confirm this due to Heat.Type, the 6 other variables are selected 50% of the time at 7 parameter level.
+
+```{r, warning=FALSE, message=FALSE, include=FALSE}
+load("modelStabReport.RData")
+```
+
+```{r}
+plot(vis.M1, which = "vip", interactive = FALSE)
+plot(vis.M1, which = "boot", interactive = FALSE)
+```
+
+## 5 Results
 
 ```{r k-fold cross validation, warning=FALSE, message=FALSE, include=TRUE}
 library(caret)
@@ -438,7 +451,7 @@ results_tbl  %>%
 final.model <- MuMIn.bic2
 ```
 
-###Assumption checking
+### 5.1 Assumption checking
 
 The independence assumption is not satisfied. Firstly, there could be spatial correlation between the houses. The value of nearby homes is interconnected because they share unmeasured characteristics, such as poverty level and local amenities. Secondly, the dataset was extracted from housing sales data within the 2001 - 2006 period, which contains repeat sales of the same houses [@corvetti_2007]. Even when the dataset we used for the linear regression model only contains data from 2006, it could still be repeat sales, which are not independent from each other.
 
@@ -489,7 +502,7 @@ corrplot(cor_mat, method="color",
          )
 ```
 
-```{r vif, warning=}
+```{r vif, warning=FALSE}
 library(car)
 vif(final.model)%>%
   kable(col.names = c("GVIF", "Df", "Adjusted GVIF (=~ VIF)"), align = "lccc",
@@ -499,8 +512,8 @@ vif(final.model)%>%
 
 There is no multicollinearity as no pair of predictors are highly correlated (i.e., having |r| > 0.8).
 
-## 5 Discussion
-### 5.1 Coefficients
+## 6 Discussion
+### 6.1 Coefficients
 The regression model indicates that both changeable and immutable housing attributes influence price, though changeable factors have stronger predictive power. Figure 4 summarises the impact of each variable in practical units. For example, the presence of a waterfront is associated with a 76% increase in housing price. For log-transformed variables, the changes are expressed by percent, such as Land Value increase of 10% being associated with a 1.18% increase on price. The model intercept (10.2), exponentially transformed to produce price baseline $28,750, represents the expected housing price when all predictive variables are at default value.  
 
 ```{r}
@@ -508,16 +521,16 @@ library(tibble)
 library(gt)
 
 effects <- tribble(
-~Variable,           ~`Change in unit`, ~`Impact on price (%)`,
-"Bathrooms",         "+1",              "+10.26%",
-"Living area",       "+100 sq ft",      "+2.89%",
-"Land value",        "+10%",            "+1.18%",
-"Waterfront",        "Yes",             "+76.03%",
-"Heat: Hot Air",     "Yes",             "+9.39%",
-"Heat: Hot Water",   "Yes",             "+7.41%",
-"Heat: None",        "Yes",             "-39.32%",
-"Age",               "+10%",            "-0.57%",
-"New construction",  "Yes",             "-25.72%"
+  ~Variable,           ~`Change in unit`, ~`Impact on price (%)`,
+  "Bathrooms",         "+1",              "+10.42%",
+  "Heat: Hot Air",     "Yes",             "+9.83%",
+  "Heat: Hot Water",   "Yes",             "+7.69%",
+  "Heat: None",        "Yes",             "-32.49%",
+  "Living area",       "+100 sq ft",      "+3.00%",
+  "Age",               "+10%",            "-0.57%",
+  "Land value",        "+10%",            "+1.25%",
+  "New construction",  "Yes",             "-22.68%",
+  "Waterfront",        "Yes",             "+74.85%"
 )
 
 gt(effects)
@@ -528,7 +541,7 @@ Changeable variables - living area, bathrooms, heating type, and new constructio
 
 Immutable attributes - waterfront location, land value, and age - enable *prospective buyers/sellers* to make informed investment decisions and assess whether a property is fairly priced. The complete model sets realistic expectations that renovation is not the sole driver of value, and even homeowners with favourable fixed housing attributes should not be complacent.
 
-### 5.2 Limitations
+### 6.2 Limitations
 The model's representativeness is limited as the data was recorded in 2006, immediately prior to the Global Financial Crisis (2007-2009). This heavily disrupted the housing market (see Figure 5) and irrational pricing trends may emerge that do not reflect 2025 conditions. Moreover, the data originates from Saratoga, a suburban area of New York, and may not generalise to urban or highly metropolitan areas of New York State, such as New York City.
 
 The risk of overfitting was mitigated through k-fold cross validation, which was appropriate as the model was not overly complex and had sufficient entries. Residual risk of minor overfitting remains. 
@@ -538,11 +551,11 @@ Independence is not met, as discussed in the Assumption section.
 <img src="https://lh3.googleusercontent.com/proxy/XMJ6hvlvaUW5ogMkMWKEoj7q42L4P8Z2MCYOvtkOROAYGaSDgxX0G1qIRDyGYK-PP0XoGNa9cU7246N9KyhhXIm4CO3WRcTu_Rc" style="width:100%; display:block; margin:0 auto;">
 
 
-### 5.3 Future Work
+### 6.3 Future Work
 We seek to acquire more recent data, with zip code location and time series stamps, and additional variables such as proximity to schools and crime rates. This would enhance the model's predictive power and accuracy, supporting the creation of interactive geographic visualisations that improve accessibility for non-technical users.
 
 
-## 6 Conclusion
+## 7 Conclusion
 This report employs a log-transformed regression model to analyse how changeable and immutable housing attributes impact housing price in Saratoga. While changeable variables have the strongest predictive power, unchangeable variables such as Waterfront remain significant. These findings support more informed rennovation, investment and price valuation decisions by homeowners, buyers and sellers.
 
 ```{r}

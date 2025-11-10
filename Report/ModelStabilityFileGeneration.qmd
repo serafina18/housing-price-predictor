@@ -420,3 +420,25 @@ plot(vis.both.p, which = "lvk", interactive = TRUE, highlight='Log.Land.Value')
 plot(vis.back.p, which = "lvk", interactive = TRUE, highlight='Log.Land.Value')
 ```
 
+# Proper Model Stability
+
+```{r}
+set.seed(402)
+vis.M1 = vis (M1_full)
+```
+
+```{r}
+save(vis.M1, file = "modelStabReport.RData")
+```
+
+
+```{r}
+
+plot(vis.M1, which = "vip", interactive = TRUE)
+plot(vis.M1, which = "boot", interactive = TRUE)
+```
+
+```{r}
+plot(vis.M1, which = "vip", interactive = FALSE)
+plot(vis.M1, which = "boot", interactive = FALSE)
+```
