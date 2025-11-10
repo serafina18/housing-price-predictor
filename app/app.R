@@ -79,9 +79,9 @@ ui <- fluidPage(
         ),
         card(
           card_header("Prediction"),
-          selectInput("sig_lvl",
-                      "Significance level of the intervals:",
-                      choices = c("0.90", "0.95")),
+          selectInput("confidence",
+                      "Tolerance/ Confidence level for intervals:",
+                      choices = c("0.90", "0.95", "0.99")),
         )
       ),
 
@@ -128,27 +128,26 @@ server <- function(input, output) {
     
     
     predict_pi <- reactive({
-      as.data.frame(predict(final_model, new_obs(), interval = "prediction", level = as.integer(input$sig_lvl)))
+      as.data.frame(predict(final_model, new_obs(), interval = "prediction", level = as.numeric(input$confidence)))
     })
     
     predict_ci <- reactive({
-      as.data.frame(predict(final_model, new_obs(), interval = "confidence", level = as.integer(input$sig_lvl)))
+      as.data.frame(predict(final_model, new_obs(), interval = "confidence", level = as.numeric(input$confidence)))
     })
     
     output$prediction <- renderUI({
-      paste0("Predicted house price in USD is ", predict_pi()$fit, ".")
+      paste0("Predicted house price in USD is ", round(predict_pi()$fit, 3), ".")
     })
     
     output$ci <- renderUI({
       tagList(
-        paste0("The confidence interval is (", predict_ci()$lwr, ", ", predict_pi()$upr, ").")
+        paste0("The confidence interval is (", round(predict_ci()$lwr,3), ", ", round(predict_ci()$upr,3), ").")
       )
     })
     
     output$pi <- renderUI({
       tagList(
-        #paste0("The prediction interval is (", round(predict_pi()$lwr,5), ", ", round(predict_pi()$upr,5), ")"),
-        paste0("The prediction interval is (", predict_pi()$lwr, ", ", predict_pi()$upr, ")"),
+        paste0("The prediction interval is (", round(predict_pi()$lwr,3), ", ", round(predict_pi()$upr,3), ")."),
         p()
       )
     })
