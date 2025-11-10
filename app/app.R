@@ -56,10 +56,11 @@ ui <- dashboardPage(
   
       tabItem(tabName = "about",
               h2("About the study"),
-              box(title = "Purpose", status = "primary", solidHeader = TRUE, width=3,
+              box(title = "Purpose", status = "primary", solidHeader = TRUE, width=4,
                   tags$p("This app employs a log-transformed multiple regression model to examine how changeable and fixed housing attributes influence property price in Saratoga, New York."),
-                  tags$p("The results provide practical guidance for homeowners seeking to maximise housing price through renovations, and for prospective buyers and sellers to make accurate price valuations and informed investment decisions.")
-              ),
+                  tags$p("The results provide practical guidance for homeowners seeking to maximise housing price through renovations, and for prospective buyers and sellers to make accurate price valuations and informed investment decisions."),
+                  tags$p("Toggle through to estimate the price of your house, given inputted variable values!")
+                  ),
               box(width=4,
                   tags$img(
                     src = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-hkoPcq7iZUC0iWY9LYHjNxPuj_CiKvxrrg&s",
@@ -67,14 +68,12 @@ ui <- dashboardPage(
                   )
                 ),
 
-              box(title = "How to use", status = "danger", solidHeader = TRUE, width=5,
+              box(title = "How to use", status = "danger", solidHeader = TRUE, width=4,
                   tags$p("Users can toggle between tabs by clicking on the sidebar menu:"),
                   tags$ul(
-                    tags$li(tags$b("Selected Model:"), " visualises model stability and variable inclusion; states the selected regression model and provides coefficient interpretations."),
-                    tags$li(tags$b("Predict Housing Price:"), " predicts housing price using user inputs for the variables included in the Selected Model. A prediction interval and confidence interval are displayed, with the confidence level adjustable by the user.")
-                  ),
-                  tags$p("Navigate through the tabs on the left to explore the fitted model, understand its drivers, and generate predictions based on custom property characteristics.")
-              ),
+                    tags$li("Selected Model: visualises model stability and variable inclusion; states the selected model and coefficient interpretations."),
+                    tags$li("Predict Housing Price: predicts housing price using user inputs for the variables in the Selected Model. A prediction interval and confidence interval is outputted, to a level of the user’s choice.")
+                    )),
               box(title = "Data Cleaning", status = "warning", solidHeader = TRUE, width=12,
                   tags$p("The dataset used in this study is a random sample of 1,734 observations from the Saratoga Housing Data (De Veaux), with 17 variables."),
                   tags$p("The data contains the dependent variable ‘Price’ for each house and predictor variables such as Lot Size, Living Area, Waterfront, and Heat Type."),
