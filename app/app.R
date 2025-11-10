@@ -1,5 +1,8 @@
 library(shiny)
 library(tidyverse)
+library(equatiomatic)
+library(bslib)
+library(thematic)
 
 data <- read.delim(
   "housing-prices-ge19.txt",
@@ -39,6 +42,8 @@ final_model <- lm(formula = Log.Price ~ Bathrooms + Heat.Type + Living.Area +
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
+  
+    titlePanel(""),
 
     # Application title
     titlePanel("House prices in Saratoga, New York"),
@@ -46,11 +51,6 @@ ui <- fluidPage(
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
-            # sliderInput("bins",
-            #             "Number of bins:",
-            #             min = 1,
-            #             max = 50,
-            #             value = 30),
             numericInput("bathrooms",
                         "Number of bathrooms:",
                         val = 2,
@@ -73,29 +73,87 @@ ui <- fluidPage(
             checkboxInput("new_construct",
                           "Is a new construction?"),
             checkboxInput("waterfront", 
-                          "Includes waterfront?")
+                          "Includes waterfront?"),
+            selectInput("sig_lvl",
+                        "Significance level:",
+                        choices = c("0.90", "0.95")),
         ),
 
         # Show a plot of the generated distribution
         mainPanel(
-           # plotOutput("distPlot")
+          withMathJax(),
+          uiOutput("formula"),
+          uiOutput("prediction"),
+          uiOutput("ci"),
+          uiOutput("pi"),
+          imageOutput("image")
         )
-    )
+    ),
+    
+    theme = bs_theme(bootswatch = "pulse"),
 )
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-
-    output$distPlot <- renderPlot({
-        # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
-
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white',
-             xlab = 'Waiting time to next eruption (in mins)',
-             main = 'Histogram of waiting times')
+  
+  thematic::thematic_shiny()
+  
+    output$formula <- renderUI({
+      withMathJax(
+        HTML(
+          equatiomatic::extract_eq(final_model, wrap = TRUE, terms_per_line = 3,
+                                   use_coefs = TRUE, coef_digits = 4)
+        )
+      )
     })
+    
+    # output$histogram
+    
+    new_obs <- reactive({
+      new_construct <- ifelse(input$new_construct == FALSE, 0, 1)
+      waterfront <- ifelse(input$waterfront == FALSE, 0, 1)
+      data.frame(Bathrooms = input$bathrooms, Heat.Type = input$heat_type,
+                 Living.Area = input$living_area,
+                 Log.Age = log(input$age), Log.Land.Value = log(input$land_value),
+                 New.Construct = factor(new_construct, levels = c("0", "1")),
+                 Waterfront = factor(waterfront, levels = c("0", "1")))
+    })
+    
+    predict_pi <- reactive({
+      as.data.frame(predict(final_model, new_obs(), interval = "prediction", level = as.integer(input$sig_lvl)))
+    })
+    
+    predict_ci <- reactive({
+      as.data.frame(predict(final_model, new_obs(), interval = "confidence", level = as.integer(input$sig_lvl)))
+    })
+    
+    output$prediction <- renderUI({
+      #paste("Predicted house price in USD is ", round(predict_pi()$fit,5), ".")
+      paste("Predicted house price in USD is ", predict_pi()$fit, ".")
+    })
+    
+    output$pi <- renderUI({
+      tagList(
+        #paste0("The prediction interval is (", round(predict_pi()$lwr,5), ", ", round(predict_pi()$upr,5), ")"),
+        paste0("The prediction interval is (", predict_pi()$lwr, ", ", predict_pi()$upr, ")"),
+        p()
+      )
+    })
+    
+    output$ci <- renderUI({
+      tagList(
+        paste0("The confidence interval is (", predict_ci()$lwr, ", ", predict_pi()$upr, ").")
+      )
+    })
+    
+    #output$ci
+      
+    output$image <- renderImage( 
+      { 
+        list(src = "house.jpeg", height = "70%") 
+      }, 
+      deleteFile = FALSE 
+    ) 
 }
 
 # Run the application 
