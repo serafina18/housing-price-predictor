@@ -50,44 +50,50 @@ ui <- fluidPage(
 
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
-        sidebarPanel(
-            numericInput("bathrooms",
-                        "Number of bathrooms:",
-                        val = 2,
-                        min = 0.5, max = 7, step = 0.5),
-            selectInput("heat_type",
-                        "Type of heating system:",
-                        choices = c("Electric", "Hot Air", "Hot Water", "None")),
-            numericInput("living_area",
-                         "Living area (square feet):",
-                         value = 1610,
-                         min = 1),
-            numericInput("age",
-                         "Age of house (years)",
-                         value = 19,
-                         min = 0, step = 1),
-            numericInput("land_value",
-                         "Value of land (US dollars):",
-                         value = 25000,
-                         min = 1),
-            checkboxInput("new_construct",
-                          "Is a new construction?"),
-            checkboxInput("waterfront", 
-                          "Includes waterfront?"),
-            selectInput("sig_lvl",
-                        "Significance level:",
-                        choices = c("0.90", "0.95")),
+      sidebarPanel(
+        card(
+          card_header("House Properties"),
+          checkboxInput("new_construct",
+                        "Is a new construction?"),
+          checkboxInput("waterfront", 
+                        "Includes waterfront?"),
+          sliderInput("bathrooms",
+                       "Number of bathrooms:",
+                       min = 0.5, max = 7,
+                       value = 2, step = 0.5),
+          selectInput("heat_type",
+                      "Type of heating system:",
+                      choices = c("Electric", "Hot Air", "Hot Water", "None")),
+          numericInput("living_area",
+                       "Living area (square feet):",
+                       value = 1610,
+                       min = 1),
+          numericInput("age",
+                       "Age of house (years)",
+                       value = 19,
+                       min = 0, step = 1),
+          numericInput("land_value",
+                       "Value of land (US dollars):",
+                       value = 25000,
+                       min = 1),
         ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-          withMathJax(),
-          uiOutput("formula"),
-          uiOutput("prediction"),
-          uiOutput("ci"),
-          uiOutput("pi"),
-          imageOutput("image")
+        card(
+          card_header("Prediction"),
+          selectInput("sig_lvl",
+                      "Significance level of the intervals:",
+                      choices = c("0.90", "0.95")),
         )
+      ),
+
+      # Show a plot of the generated distribution
+      mainPanel(
+        withMathJax(),
+        uiOutput("formula"),
+        uiOutput("prediction"),
+        uiOutput("ci"),
+        uiOutput("pi"),
+        imageOutput("image")
+      )
     ),
     
     theme = bs_theme(bootswatch = "pulse"),
@@ -119,6 +125,8 @@ server <- function(input, output) {
                  Waterfront = factor(waterfront, levels = c("0", "1")))
     })
     
+    
+    
     predict_pi <- reactive({
       as.data.frame(predict(final_model, new_obs(), interval = "prediction", level = as.integer(input$sig_lvl)))
     })
@@ -128,8 +136,13 @@ server <- function(input, output) {
     })
     
     output$prediction <- renderUI({
-      #paste("Predicted house price in USD is ", round(predict_pi()$fit,5), ".")
-      paste("Predicted house price in USD is ", predict_pi()$fit, ".")
+      paste0("Predicted house price in USD is ", predict_pi()$fit, ".")
+    })
+    
+    output$ci <- renderUI({
+      tagList(
+        paste0("The confidence interval is (", predict_ci()$lwr, ", ", predict_pi()$upr, ").")
+      )
     })
     
     output$pi <- renderUI({
@@ -139,14 +152,6 @@ server <- function(input, output) {
         p()
       )
     })
-    
-    output$ci <- renderUI({
-      tagList(
-        paste0("The confidence interval is (", predict_ci()$lwr, ", ", predict_pi()$upr, ").")
-      )
-    })
-    
-    #output$ci
       
     output$image <- renderImage( 
       { 
