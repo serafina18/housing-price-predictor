@@ -1,4 +1,5 @@
 library(shiny)
+library(shinydashboard)
 library(tidyverse)
 library(equatiomatic)
 library(bslib)
@@ -72,7 +73,7 @@ ui <- dashboardPage(
                   tags$p("Users can toggle between tabs by clicking on the sidebar menu:"),
                   tags$ul(
                     tags$li("Selected Model: visualises model stability and variable inclusion; states the selected model and coefficient interpretations."),
-                    tags$li("Predict Housing Price: predicts housing price using user inputs for the variables in the Selected Model. A prediction interval and confidence interval is outputted, to a level of the user’s choice.")
+                    tags$li("Predict Housing Price: predicts housing price using user inputs for the variables in the Selected Model. The prediction interval and confidence interval is outputted, to a level of the user’s choice.")
                     )),
               box(title = "Data Cleaning", status = "warning", solidHeader = TRUE, width=12,
                   tags$p("The dataset used in this study is a random sample of 1,734 observations from the Saratoga Housing Data (De Veaux), with 17 variables."),
@@ -108,8 +109,8 @@ ui <- dashboardPage(
                     sliderInput("age", "Age (years):", value = 19, min = 0, max=225),
                     numericInput("land_value", "Land value ($USD):", value = 25000, min = 1),
                     checkboxInput("new_construct", "New construction?"),
-                    checkboxInput("waterfront", "Waterfront?"),
-                    selectInput("sig_lvl", "Significance level:", choices = c("0.90", "0.95"))
+                    checkboxInput("waterfront", "Has waterfront?"),
+                    selectInput("confidence", "Tolerance/ Confidence level for intervals:", choices = c("0.90", "0.95", "0.99"))
                 ),
                 box(title = "Model", status = "danger", solidHeader = TRUE, width = 8,
                     withMathJax(),
@@ -118,8 +119,7 @@ ui <- dashboardPage(
                     withMathJax(),
                     uiOutput("prediction"),
                     uiOutput("ci"),
-                    uiOutput("pi"),
-                    imageOutput("image", height = "40px", width = "100%")
+                    uiOutput("pi")
                 )
               )
       )
@@ -193,17 +193,18 @@ server <- function(input, output) {
     waterfront <- ifelse(input$waterfront == FALSE, 0, 1)
     data.frame(Bathrooms = input$bathrooms, Heat.Type = input$heat_type,
                Living.Area = input$living_area,
-               Log.Age = log(input$age), Log.Land.Value = log(input$land_value),
+               Log.Age = ifelse(input$age != 0, log(input$age), 0),
+               Log.Land.Value = log(input$land_value),
                New.Construct = factor(new_construct, levels = c("0", "1")),
                Waterfront = factor(waterfront, levels = c("0", "1")))
   })
   
   predict_pi <- reactive({
-    as.data.frame(predict(final_model, new_obs(), interval = "prediction", level = as.integer(input$sig_lvl)))
+    as.data.frame(predict(final_model, new_obs(), interval = "prediction", level = as.numeric(input$confidence)))
   })
   
   predict_ci <- reactive({
-    as.data.frame(predict(final_model, new_obs(), interval = "confidence", level = as.integer(input$sig_lvl)))
+    as.data.frame(predict(final_model, new_obs(), interval = "confidence", level = as.numeric(input$confidence)))
   })
   
   output$prediction <- renderUI({
@@ -236,14 +237,6 @@ server <- function(input, output) {
       "</p>"
     ))
   })
-  
-  
-  output$image <- renderImage( 
-    { 
-      list(src = "house.jpeg", height = "70%") 
-    }, 
-    deleteFile = FALSE 
-  ) 
 }
 
 # Run the application 
