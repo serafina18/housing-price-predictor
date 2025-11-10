@@ -394,6 +394,8 @@ plot(vis.M1, which = "boot", interactive = FALSE)
 ```{r k-fold cross validation, warning=FALSE, message=FALSE, include=TRUE}
 library(caret)
 
+set.seed(5)
+
 cv_metrics <- function(form, data, v) {
   cv = train(form, data,
              method = "lm",
