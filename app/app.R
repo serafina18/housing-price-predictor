@@ -116,11 +116,8 @@ ui <- dashboardPage(
                     sliderInput("land_value", "Land value ($USD):", value = 25000, min = 200, max = 255000, step = 1),
                     checkboxInput("new_construct", "New construction?"),
                     checkboxInput("waterfront", "Has waterfront?"),
-                    #selectInput("conf_lvl", "Confidence level for intervals:", choices = c("0.90", "0.95", "0.99"))
-                ),
-                box(title = "Prediction", status = "primary", solidHeader = TRUE, width = 4,
                     sliderInput("conf_lvl", "Confidence level for intervals:", value = 0.9, min = 0, max = 0.99, step = 0.01),
-                    checkboxInput("extrapolation", "Allow extrapolation/ extreme value?")
+                    #selectInput("conf_lvl", "Confidence level for intervals:", choices = c("0.90", "0.95", "0.99"))
                 ),
                 box(title = "Model", status = "danger", solidHeader = TRUE, width = 8,
                     withMathJax(),
@@ -129,7 +126,8 @@ ui <- dashboardPage(
                     withMathJax(),
                     uiOutput("prediction_val"),
                     uiOutput("ci"),
-                    uiOutput("pi")
+                    uiOutput("pi"),
+                    uiOutput("validation")
                 )
               )
       )
@@ -256,6 +254,14 @@ server <- function(input, output) {
       "<p style='font-size:16px; text-align:center;'>
       <b>", input$conf_lvl*100, "% Prediction Interval:</b><br>
       $", format(pi_lower, big.mark=","), " – $", format(pi_upper, big.mark=","),
+      "</p>"
+    ))
+  })
+  
+  output$validation <- renderUI({
+    HTML(paste0(
+      "<p style='font-size:16px;'>
+      Input validation is achieved through the sliding scales, whose bounds reflect the minimum and maximum values of the dataset. This ensures the model is not extrapolated beyond realistic values.",
       "</p>"
     ))
   })
