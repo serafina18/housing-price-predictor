@@ -1,6 +1,7 @@
 library(shiny)
 library(shinydashboard)
 library(tidyverse)
+library(plotly)
 library(equatiomatic)
 library(bslib)
 library(thematic)
@@ -40,6 +41,8 @@ data_cleaned <- data_cleaned %>%
 final_model <- lm(formula = Log.Price ~ Bathrooms + Heat.Type + Living.Area + 
                     Log.Age + Log.Land.Value + New.Construct + Waterfront,
                   data = data_cleaned)
+
+load("../Report/modelStabReport.RData")
 
 # UI
 ui <- dashboardPage(
@@ -168,6 +171,18 @@ server <- function(input, output) {
     gt::gt(effects) %>%
       gt::tab_header(title = "Interpretation of Coefficient Effects") %>%
       gt::fmt_markdown(columns = everything())
+  })
+  
+  #output$stability <- renderPlot({
+  #  withSpinner(plotOutput(outputId="stability_plot", height = "350px"))
+  #})
+  
+  output$stability_plot <- renderPlot({
+    plot(vis.M1, which = "boot", interactive = FALSE)
+  })
+  
+  output$inclusion_plot <- renderPlot({
+    plot(vis.M1, which = "vip", interactive = FALSE)
   })
   
   output$formula1 <- renderUI({
