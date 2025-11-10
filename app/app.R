@@ -40,125 +40,211 @@ final_model <- lm(formula = Log.Price ~ Bathrooms + Heat.Type + Living.Area +
                     Log.Age + Log.Land.Value + New.Construct + Waterfront,
                   data = data_cleaned)
 
-# Define UI for application that draws a histogram
-ui <- fluidPage(
+# UI
+ui <- dashboardPage(
+  dashboardHeader(title = "Housing Prices in Saratoga, New York", 
+                  titleWidth= 350),
+  dashboardSidebar(
+    sidebarMenu(
+      menuItem("About", tabName = "about", icon = icon("info-circle")),
+      menuItem("Selected Model", tabName = "model", icon = icon("chart-line")),
+      menuItem("Predict Housing Price", tabName = "prediction", icon = icon("table"))
+    )
+  ),
+  dashboardBody(
+    tabItems(
   
-    titlePanel(""),
+      tabItem(tabName = "about",
+              h2("About the study"),
+              box(title = "Purpose", status = "primary", solidHeader = TRUE, width=3,
+                  tags$p("This app employs a log-transformed multiple regression model to examine how changeable and fixed housing attributes influence property price in Saratoga, New York."),
+                  tags$p("The results provide practical guidance for homeowners seeking to maximise housing price through renovations, and for prospective buyers and sellers to make accurate price valuations and informed investment decisions.")
+              ),
+              box(width=4,
+                  tags$img(
+                    src = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-hkoPcq7iZUC0iWY9LYHjNxPuj_CiKvxrrg&s",
+                    style = "width:100%; height:auto; border-radius:8px; box-shadow:0 0 8px rgba(0,0,0,0.1);"
+                  )
+                ),
 
-    # Application title
-    titlePanel("House prices in Saratoga, New York"),
-
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-      sidebarPanel(
-        card(
-          card_header("House Properties"),
-          checkboxInput("new_construct",
-                        "Is a new construction?"),
-          checkboxInput("waterfront", 
-                        "Includes waterfront?"),
-          sliderInput("bathrooms",
-                       "Number of bathrooms:",
-                       min = 0.5, max = 7,
-                       value = 2, step = 0.5),
-          selectInput("heat_type",
-                      "Type of heating system:",
-                      choices = c("Electric", "Hot Air", "Hot Water", "None")),
-          numericInput("living_area",
-                       "Living area (square feet):",
-                       value = 1610,
-                       min = 1),
-          numericInput("age",
-                       "Age of house (years)",
-                       value = 19,
-                       min = 0, step = 1),
-          numericInput("land_value",
-                       "Value of land (US dollars):",
-                       value = 25000,
-                       min = 1),
-        ),
-        card(
-          card_header("Prediction"),
-          selectInput("sig_lvl",
-                      "Significance level of the intervals:",
-                      choices = c("0.90", "0.95")),
-        )
-      ),
-
-      # Show a plot of the generated distribution
-      mainPanel(
-        withMathJax(),
-        uiOutput("formula"),
-        uiOutput("prediction"),
-        uiOutput("ci"),
-        uiOutput("pi"),
-        imageOutput("image")
+              box(title = "How to use", status = "danger", solidHeader = TRUE, width=5,
+                  tags$p("Users can toggle between tabs by clicking on the sidebar menu:"),
+                  tags$ul(
+                    tags$li(tags$b("Selected Model:"), " visualises model stability and variable inclusion; states the selected regression model and provides coefficient interpretations."),
+                    tags$li(tags$b("Predict Housing Price:"), " predicts housing price using user inputs for the variables included in the Selected Model. A prediction interval and confidence interval are displayed, with the confidence level adjustable by the user.")
+                  ),
+                  tags$p("Navigate through the tabs on the left to explore the fitted model, understand its drivers, and generate predictions based on custom property characteristics.")
+              ),
+              box(title = "Data Cleaning", status = "warning", solidHeader = TRUE, width=12,
+                  tags$p("The dataset used in this study is a random sample of 1,734 observations from the Saratoga Housing Data (De Veaux), with 17 variables."),
+                  tags$p("The data contains the dependent variable ‘Price’ for each house and predictor variables such as Lot Size, Living Area, Waterfront, and Heat Type."),
+                  tags$p("The data contained no missing values. Invalid and inconsistent entries were filtered out, including where Lot Size value was 0, and where Age was 0 while New Construction Status was False. Certain numeric variables such as Heat Type were also converted into categorical data."),
+                  tags$p("Log transformation was applied for variables demonstrating positive skew, with most observations cluttered around the lower end. This included the variable Price (visualised in the histogram below) and predictors such as Lot Size, Age, and Land Value. These variables were transformed to stabilise variance and satisfy normality assumptions."),
+                  plotOutput("histogram", height = "350px")
+              )),
+      
+      tabItem(tabName = "model",
+              h2("Selected Model"),
+              fluidRow(
+                box(title = "Model Stability Plot", status = "primary", solidHeader = TRUE, width = 6,
+                    plotOutput("stability_plot", height = "350px")),
+                box(title = "Variable Inclusion Plot", status = "primary", solidHeader = TRUE, width = 6,
+                    plotOutput("inclusion_plot", height = "350px"))
+              ),
+              fluidRow(
+                box(title = "Model", status = "danger", solidHeader = TRUE, width = 12,
+                    withMathJax(),
+                    uiOutput("formula1")),
+                box(title = "Coefficient Interpretation", status = "warning", solidHeader = TRUE, width = 12,
+                    gt::gt_output("coef_table"))
+              )),
+              
+      tabItem(tabName = "prediction",
+              h2(" Prediction"),
+              fluidRow(
+                box(title = "Input Variables", status = "primary", solidHeader = TRUE, width = 4,
+                    sliderInput("bathrooms", "Number of bathrooms (half bathroom represents no shower or bathtub):", value = 2, min = 0, max = 7, step = 0.5),
+                    selectInput("heat_type", "Heating system:", choices = c("Electric", "Hot Air", "Hot Water", "None")),
+                    numericInput("living_area", "Living area (sq ft):", value = 1610, min = 1),
+                    sliderInput("age", "Age (years):", value = 19, min = 0, max=225),
+                    numericInput("land_value", "Land value ($USD):", value = 25000, min = 1),
+                    checkboxInput("new_construct", "New construction?"),
+                    checkboxInput("waterfront", "Waterfront?"),
+                    selectInput("sig_lvl", "Significance level:", choices = c("0.90", "0.95"))
+                ),
+                box(title = "Model", status = "danger", solidHeader = TRUE, width = 8,
+                    withMathJax(),
+                    uiOutput("formula2")),
+                box(title = "Prediction", status = "warning", solidHeader = TRUE, width = 8,
+                    withMathJax(),
+                    uiOutput("prediction"),
+                    uiOutput("ci"),
+                    uiOutput("pi"),
+                    imageOutput("image", height = "40px", width = "100%")
+                )
+              )
       )
-    ),
-    
-    theme = bs_theme(bootswatch = "pulse"),
+    )
+  ),
+  skin = "purple"
 )
 
-# Define server logic required to draw a histogram
+
+# SEVER
 server <- function(input, output) {
   
   thematic::thematic_shiny()
   
-    output$formula <- renderUI({
-      withMathJax(
-        HTML(
-          equatiomatic::extract_eq(final_model, wrap = TRUE, terms_per_line = 3,
-                                   use_coefs = TRUE, coef_digits = 4)
-        )
+  options(scipen = 100)
+  
+  output$histogram <- renderPlot({
+    ggplot(data, aes(x = Price)) + 
+      geom_histogram(color = "darkslateblue", fill = "darkslategray3", bins = 50) +
+      labs(title = "Histogram Distribution of Housing Prices in New York",
+           x = "Housing Price ($USD)", y = "Frequency") +
+      geom_vline(aes(xintercept = mean(Price)), colour = "red", linewidth = 1) +
+      geom_vline(aes(xintercept = median(Price)), colour = "deeppink", linewidth = 1) +
+      annotate("label", 
+               x = mean(data$Price), y = 230, label = "Mean",
+               fill = "red", color = 'white', size = 3.5) +
+      annotate("label", 
+               x = median(data$Price), y = 215, label = "Median",  
+               fill = "deeppink", color = 'white', size = 3.5)
+  })
+  
+  output$coef_table <- render_gt({
+    effects <- tibble::tribble(
+      ~Variable,           ~`Change in unit`, ~`Impact on price (%)`,
+      "Bathrooms",         "+1",              "+10.42%",
+      "Heat: hot air",     "Yes",             "+9.83%",
+      "Heat: hot water",   "Yes",             "+7.69%",
+      "Heat: none",        "Yes",             "-32.49%",
+      "Living area",       "+100 sq ft",      "+3.00%",
+      "Age",               "+10%",            "-0.57%",
+      "Land value",        "+10%",            "+1.25%",
+      "New construction",  "Yes",             "-22.68%",
+      "Waterfront",        "Yes",             "+74.85%"
+    )
+    
+    gt::gt(effects) %>%
+      gt::tab_header(title = "Interpretation of Coefficient Effects") %>%
+      gt::fmt_markdown(columns = everything())
+  })
+  
+  output$formula1 <- renderUI({
+    withMathJax(
+      HTML(
+        equatiomatic::extract_eq(final_model, wrap = TRUE, terms_per_line = 6,
+                                 use_coefs = TRUE, coef_digits = 4)
       )
-    })
-    
-    # output$histogram
-    
-    new_obs <- reactive({
-      new_construct <- ifelse(input$new_construct == FALSE, 0, 1)
-      waterfront <- ifelse(input$waterfront == FALSE, 0, 1)
-      data.frame(Bathrooms = input$bathrooms, Heat.Type = input$heat_type,
-                 Living.Area = input$living_area,
-                 Log.Age = log(input$age), Log.Land.Value = log(input$land_value),
-                 New.Construct = factor(new_construct, levels = c("0", "1")),
-                 Waterfront = factor(waterfront, levels = c("0", "1")))
-    })
-    
-    
-    
-    predict_pi <- reactive({
-      as.data.frame(predict(final_model, new_obs(), interval = "prediction", level = as.integer(input$sig_lvl)))
-    })
-    
-    predict_ci <- reactive({
-      as.data.frame(predict(final_model, new_obs(), interval = "confidence", level = as.integer(input$sig_lvl)))
-    })
-    
-    output$prediction <- renderUI({
-      paste0("Predicted house price in USD is ", predict_pi()$fit, ".")
-    })
-    
-    output$ci <- renderUI({
-      tagList(
-        paste0("The confidence interval is (", predict_ci()$lwr, ", ", predict_pi()$upr, ").")
+    )
+  })
+  
+  output$formula2 <- renderUI({
+    withMathJax(
+      HTML(
+        equatiomatic::extract_eq(final_model, wrap = TRUE, terms_per_line = 3,
+                                 use_coefs = TRUE, coef_digits = 4)
       )
-    })
-    
-    output$pi <- renderUI({
-      tagList(
-        #paste0("The prediction interval is (", round(predict_pi()$lwr,5), ", ", round(predict_pi()$upr,5), ")"),
-        paste0("The prediction interval is (", predict_pi()$lwr, ", ", predict_pi()$upr, ")"),
-        p()
-      )
-    })
-      
-    output$image <- renderImage( 
-      { 
-        list(src = "house.jpeg", height = "70%") 
-      }, 
-      deleteFile = FALSE 
-    ) 
+    )
+  })
+  
+  new_obs <- reactive({
+    new_construct <- ifelse(input$new_construct == FALSE, 0, 1)
+    waterfront <- ifelse(input$waterfront == FALSE, 0, 1)
+    data.frame(Bathrooms = input$bathrooms, Heat.Type = input$heat_type,
+               Living.Area = input$living_area,
+               Log.Age = log(input$age), Log.Land.Value = log(input$land_value),
+               New.Construct = factor(new_construct, levels = c("0", "1")),
+               Waterfront = factor(waterfront, levels = c("0", "1")))
+  })
+  
+  predict_pi <- reactive({
+    as.data.frame(predict(final_model, new_obs(), interval = "prediction", level = as.integer(input$sig_lvl)))
+  })
+  
+  predict_ci <- reactive({
+    as.data.frame(predict(final_model, new_obs(), interval = "confidence", level = as.integer(input$sig_lvl)))
+  })
+  
+  output$prediction <- renderUI({
+    pred_val <- round(exp(predict_pi()$fit), 0) 
+    HTML(paste0(
+      "<h2 style='color:#2c3e50; font-weight:bold; text-align:center;'>
+      Predicted House Price: $", format(pred_val, big.mark=","), 
+      "</h1>"
+    ))
+  })
+  
+  output$ci <- renderUI({
+    ci_lower <- round(exp(predict_ci()$lwr), 0)
+    ci_upper <- round(exp(predict_ci()$upr), 0)
+    HTML(paste0(
+      "<p style='font-size:16px; text-align:center;'>
+      <b>95% Confidence Interval:</b><br>
+      $", format(ci_lower, big.mark=","), " – $", format(ci_upper, big.mark=","),
+      "</p>"
+    ))
+  })
+  
+  output$pi <- renderUI({
+    pi_lower <- round(exp(predict_pi()$lwr), 0)
+    pi_upper <- round(exp(predict_pi()$upr), 0)
+    HTML(paste0(
+      "<p style='font-size:16px; text-align:center;'>
+      <b>95% Prediction Interval:</b><br>
+      $", format(pi_lower, big.mark=","), " – $", format(pi_upper, big.mark=","),
+      "</p>"
+    ))
+  })
+  
+  
+  output$image <- renderImage( 
+    { 
+      list(src = "house.jpeg", height = "70%") 
+    }, 
+    deleteFile = FALSE 
+  ) 
 }
 
 # Run the application 
