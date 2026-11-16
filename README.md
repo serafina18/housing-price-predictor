@@ -56,11 +56,3 @@ The data is from 2006, around the global financial crisis, and from a suburban c
 ## Tech
 
 R, Quarto, R Markdown, `tidyverse`, `caret` (cross-validation), `mplot` (model stability), `ggplot2`, Shiny
-
-## Team
-
-DATA2902 group project (Group L91G03), University of Sydney.
-
-Anne Do, Arielle Melamed, Serafina Aurelia, Eric Lee, Haresh Kumararajah
-
-**My contribution (Serafina Aurelia):** [describe your part, e.g. variable selection, cross-validation, the Shiny app, or specific report sections]
